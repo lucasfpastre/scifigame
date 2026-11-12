@@ -1,0 +1,100 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/debriefing.gd" id="1_script"]
+[ext_resource type="Theme" path="res://scenes/terminal_theme.tres" id="2_theme"]
+[ext_resource type="Shader" path="res://shaders/crt_phosphor.gdshader" id="3_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_crt"]
+shader = ExtResource("3_shader")
+shader_parameter/phosphor_color = Color(0.25, 1, 0.45, 1)
+shader_parameter/scanline_count = 360.0
+shader_parameter/scanline_intensity = 0.2
+shader_parameter/curvature = 0.025
+shader_parameter/vignette_intensity = 0.9
+shader_parameter/glow_intensity = 0.15
+shader_parameter/flicker_speed = 24.0
+shader_parameter/flicker_intensity = 0.015
+
+[node name="Debriefing" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.015, 0.04, 0.02, 1)
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 14
+
+[node name="Layout" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HeaderPanel" type="PanelContainer" parent="Margin/Layout"]
+layout_mode = 2
+
+[node name="LblHeader" type="Label" parent="Margin/Layout/HeaderPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "[ RELATÓRIO OFICIAL DE COMANDO // ACADEMIA DE ALCÂNTARA ]"
+horizontal_alignment = 1
+
+[node name="BodyPanel" type="PanelContainer" parent="Margin/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TxtReport" type="RichTextLabel" parent="Margin/Layout/BodyPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+bbcode_enabled = true
+scroll_following = true
+
+[node name="ActionBar" type="PanelContainer" parent="Margin/Layout"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="Margin/Layout/ActionBar"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BtnScores" type="Button" parent="Margin/Layout/ActionBar/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[ MURAL DE RECORDES HISTÓRICOS ]"
+
+[node name="BtnContinue" type="Button" parent="Margin/Layout/ActionBar/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[ RETORNAR À SALA DE BRIEFING DA ACADEMIA ]"
+
+[node name="CRTOverlay" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_crt")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2

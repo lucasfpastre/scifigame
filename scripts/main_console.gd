@@ -392,6 +392,7 @@ func _on_action_fire_or_intercept() -> void:
 		
 		var intercept_res = radar.intercept_nearest_torpedo(custom_laser_eff)
 		if intercept_res["success"]:
+			ship.torpedoes_intercepted_count += 1
 			_log("[color=#55ff55]** SUCESSO: %s **[/color]" % intercept_res["message"])
 		else:
 			_log("[color=#ff8844]> %s[/color]" % intercept_res["message"])
@@ -409,6 +410,7 @@ func _on_action_fire_or_intercept() -> void:
 			target.hull = max(0, target.hull - dmg)
 			_log("[color=#ffaa33]> Disparando baterias de feixes em %s! Causou %d de dano.[/color]" % [target.name, dmg])
 			if target.hull <= 0:
+				ship.cruisers_destroyed_count += 1
 				_log("[color=#ffff33]** %s FOI DESTRUÍDO NO IMPACTO! **[/color]" % target.name)
 				radar.contacts.erase(target)
 		else:
@@ -460,19 +462,32 @@ func _on_action_comms() -> void:
 
 func _game_over(reason: String) -> void:
 	is_game_over = true
+	
+	var debrief = GameState.record_run_result(
+		ship.civilians_rescued,
+		ship.civilians_casualties,
+		tick_count,
+		ship.torpedoes_intercepted_count,
+		ship.cruisers_destroyed_count,
+		reason
+	)
+	
 	_log("\n[color=#ff3333]====================================================[/color]")
 	_log("[color=#ff3333]*** %s ***[/color]" % reason)
 	_log("[color=#ffaa33]AVALIAÇÃO DA ACADEMIA ESPACIAL DE ALCÂNTARA:[/color]")
 	_log("[color=#ffffaa]- Civis Resgatados e Acolhidos: %d / %d[/color]" % [ship.civilians_rescued, ship.total_civilians])
-	_log("[color=#ffffaa]- Baixas Hospitalares: %d[/color]" % ship.civilians_casualties)
+	if ship.civilians_casualties > 0:
+		_log("[color=#ff6666]- Baixas Hospitalares na UTI: %d[/color]" % ship.civilians_casualties)
 	_log("[color=#ffffaa]- Tempo de Sobrevivência: %d pulsos táticos[/color]" % tick_count)
-	_log("[color=#ffffaa]- Moral da Tripulação: %d%%[/color]" % ship.crew["PILOT"].trust)
-	_log("[color=#ffffaa]- Veredito: O Protocolo Baependi avalia a liderança e sacrifício diante da derrota inevitável.[/color]")
+	_log("[color=#33ff66]- Pontuação de Comando: %d pontos[/color]" % debrief["total_score"])
+	_log("[color=#ffff33]- Pontos de Honra de Alcântara (PHA): +%d PHA (Saldo: %d PHA)[/color]" % [debrief["pha_earned"], GameState.pha])
+	_log("[color=#55ffff]- Patente Militar Concedida: %s[/color]" % debrief["rank_title"])
+	_log("[color=#aaffaa]\"%s\"[/color]" % debrief["evaluation"])
 	_log("[color=#ff3333]====================================================[/color]")
 	
-	btn_pause.text = "[ VOLTAR À SELEÇÃO DE TRIPULAÇÃO ]"
+	btn_pause.text = "[ ABRIR RELATÓRIO OFICIAL DE ALCÂNTARA ]"
 	btn_pause.pressed.disconnect(_toggle_pause)
-	btn_pause.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/crew_selection.tscn"))
+	btn_pause.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/debriefing.tscn"))
 
 func _log(bbcode: String) -> void:
 	txt_log.append_text(bbcode + "\n")

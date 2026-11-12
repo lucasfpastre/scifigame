@@ -55,17 +55,50 @@ layout_mode = 2
 
 [node name="VBox" type="VBoxContainer" parent="Margin/Layout/HeaderPanel"]
 layout_mode = 2
-theme_override_constants/separation = 2
+theme_override_constants/separation = 4
 
 [node name="LblTitle" type="Label" parent="Margin/Layout/HeaderPanel/VBox"]
 layout_mode = 2
-text = "[ ACADEMIA ESPACIAL DE ALCÂNTARA // DOSSIÊ DE TRIPULAÇÃO ]"
+text = "[ ACADEMIA ESPACIAL DE ALCÂNTARA // DOSSIÊ DE MISSÃO E BELONAVE ]"
 horizontal_alignment = 1
 
-[node name="LblSub" type="Label" parent="Margin/Layout/HeaderPanel/VBox"]
+[node name="HBoxMeta" type="HBoxContainer" parent="Margin/Layout/HeaderPanel/VBox"]
 layout_mode = 2
-text = "Defina os Oficiais da ponte de comando da CCS João Cândido para o Protocolo Baependi."
-horizontal_alignment = 1
+alignment = 1
+
+[node name="LblPHA" type="Label" parent="Margin/Layout/HeaderPanel/VBox/HBoxMeta"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SALDO: 0 PHA"
+
+[node name="BtnScores" type="Button" parent="Margin/Layout/HeaderPanel/VBox/HBoxMeta"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "[ SALA DE CONDECORAÇÕES ]"
+
+[node name="HBoxShip" type="HBoxContainer" parent="Margin/Layout/HeaderPanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BtnShipSelect" type="Button" parent="Margin/Layout/HeaderPanel/VBox/HBoxShip"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[ BELONAVE: CCS JOÃO CÂNDIDO ]"
+
+[node name="BtnShipUnlock" type="Button" parent="Margin/Layout/HeaderPanel/VBox/HBoxShip"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "[ DESBLOQUEAR ]"
+
+[node name="TxtShipInfo" type="RichTextLabel" parent="Margin/Layout/HeaderPanel/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
 
 [node name="GridCards" type="GridContainer" parent="Margin/Layout"]
 layout_mode = 2

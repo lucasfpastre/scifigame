@@ -14,6 +14,13 @@ var selected_indices: Dictionary = {
 
 var sfx = null
 
+# Nós do Cabeçalho e Meta-Progressão
+@onready var lbl_pha: Label = %LblPHA
+@onready var btn_ship_select: Button = %BtnShipSelect
+@onready var btn_ship_unlock: Button = %BtnShipUnlock
+@onready var btn_scores: Button = %BtnScores
+@onready var txt_ship_info: RichTextLabel = %TxtShipInfo
+
 @onready var btn_launch: Button = %BtnLaunch
 
 # Painéis dos Oficiais
@@ -33,12 +40,22 @@ var sfx = null
 @onready var btn_tac_0: Button = %BtnTac0
 @onready var btn_tac_1: Button = %BtnTac1
 
+var available_ship_ids = ["SHIP_CANDIDO", "SHIP_GUARANI", "SHIP_TAMANDARE"]
+var current_ship_idx = 0
+
 func _ready() -> void:
 	sfx = SoundEffectsScript.new()
 	add_child(sfx)
 	
+	GameState.load_save()
 	roster = CrewMemberScript.get_available_roster()
+	
+	current_ship_idx = available_ship_ids.find(GameState.selected_ship_id)
+	if current_ship_idx == -1:
+		current_ship_idx = 0
+		
 	_setup_buttons()
+	_update_ship_ui()
 	_update_all_cards()
 
 func _setup_buttons() -> void:
@@ -54,7 +71,63 @@ func _setup_buttons() -> void:
 	btn_tac_0.pressed.connect(func(): _select_officer("TACTICAL", 0))
 	btn_tac_1.pressed.connect(func(): _select_officer("TACTICAL", 1))
 	
+	btn_ship_select.pressed.connect(_on_cycle_ship)
+	btn_ship_unlock.pressed.connect(_on_unlock_ship)
+	btn_scores.pressed.connect(_on_scores_pressed)
 	btn_launch.pressed.connect(_on_launch_pressed)
+
+func _on_cycle_ship() -> void:
+	sfx.play_click()
+	current_ship_idx = (current_ship_idx + 1) % available_ship_ids.size()
+	var new_id = available_ship_ids[current_ship_idx]
+	if GameState.unlocked_ships.has(new_id):
+		GameState.selected_ship_id = new_id
+		GameState.save_game()
+	_update_ship_ui()
+
+func _on_unlock_ship() -> void:
+	var target_id = available_ship_ids[current_ship_idx]
+	if GameState.unlock_ship(target_id):
+		sfx.play_alert()
+		_update_ship_ui()
+	else:
+		sfx.play_error()
+
+func _on_scores_pressed() -> void:
+	sfx.play_click()
+	get_tree().change_scene_to_file("res://scenes/debriefing.tscn")
+
+func _update_ship_ui() -> void:
+	lbl_pha.text = "SALDO: %d PHA" % GameState.pha
+	var ship_id = available_ship_ids[current_ship_idx]
+	var ship_defs = GameState.get_ship_definitions()
+	var def = ship_defs[ship_id]
+	var is_unlocked = GameState.unlocked_ships.has(ship_id)
+	
+	btn_ship_select.text = "[ BELONAVE: %s ]" % def["name"]
+	
+	if is_unlocked:
+		btn_ship_unlock.visible = false
+		btn_launch.disabled = false
+		btn_launch.text = "[ INICIAR SIMULAÇÃO // DESDOBRAR %s ]" % def["name"].to_upper()
+	else:
+		btn_ship_unlock.visible = true
+		btn_launch.disabled = true
+		btn_launch.text = "[ BELONAVE BLOQUEADA - DESBLOQUEIE ACIMA ]"
+		if GameState.pha >= def["cost"]:
+			btn_ship_unlock.disabled = false
+			btn_ship_unlock.text = "[ DESBLOQUEAR (%d PHA) ]" % def["cost"]
+			btn_ship_unlock.modulate = Color(1.0, 1.0, 0.3)
+		else:
+			btn_ship_unlock.disabled = true
+			btn_ship_unlock.text = "[ BLOQUEADO (%d PHA) ]" % def["cost"]
+			btn_ship_unlock.modulate = Color(0.8, 0.4, 0.4)
+			
+	var info_text = "[color=#55ffff]%s[/color] \"%s\" | Reator: %d MW | Casco: %d | Escudos: %d%%\n" % [
+		def["class_type"], def["callsign"], def["power"], def["hull"], def["shield_per_quad"]
+	]
+	info_text += "[color=#33ff66][+] %s[/color] | [color=#ffaaaa][-] %s[/color]" % [def["pro"], def["con"]]
+	txt_ship_info.text = info_text
 
 func _select_officer(role_str: String, index: int) -> void:
 	selected_indices[role_str] = index

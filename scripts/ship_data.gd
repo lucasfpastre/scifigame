@@ -9,18 +9,21 @@ signal quadrants_changed(quadrants: Dictionary, heading: int)
 signal rescue_progress(rescued: int, buffer: int, total: int, casualties: int)
 signal crew_intercom(speaker: String, text: String)
 
+var ship_id: String = "SHIP_CANDIDO"
 var ship_name: String = "CCS JOÃO CÂNDIDO // NX-900"
 var total_power: int = 10
 var hull: int = 100
 var max_hull: int = 100
+var max_quad_shield: int = 100
 var alert_state: String = "NORMAL"
+var speed_factor: float = 1.0
 
-# Escudos Direcionais em 4 Quadrantes (0-100% cada)
+# Escudos Direcionais em 4 Quadrantes
 var quadrants: Dictionary = {
-	"FWD": 100,  # Proa / Frente
-	"AFT": 100,  # Popa / Traseira
-	"PORT": 100, # Bombordo / Esquerda
-	"STBD": 100  # Boreste / Direita
+	"FWD": 100,
+	"AFT": 100,
+	"PORT": 100,
+	"STBD": 100
 }
 
 # Orientação da nave: 0 = Norte (Proa aponta para cima), 90 = Leste, 180 = Sul, 270 = Oeste
@@ -36,6 +39,10 @@ var transporter_active: bool = false
 var chaff_count: int = 3
 var life_support_zero_ticks: int = 0
 
+# Estatísticas de combate da partida
+var torpedoes_intercepted_count: int = 0
+var cruisers_destroyed_count: int = 0
+
 # Sistemas e energia alocada
 var systems: Dictionary = {
 	"MOTORES": 2,
@@ -48,22 +55,47 @@ var systems: Dictionary = {
 # Tripulação da nave
 var crew: Dictionary = {}
 
-func _init(custom_crew: Dictionary = {}) -> void:
+func _init(custom_crew: Dictionary = {}, p_ship_id: String = "") -> void:
+	if p_ship_id == "":
+		p_ship_id = GameState.selected_ship_id
+	ship_id = p_ship_id
+	
+	var ship_defs = GameState.get_ship_definitions()
+	var def = ship_defs.get(ship_id, ship_defs["SHIP_CANDIDO"])
+	
+	ship_name = def["name"]
+	hull = def["hull"]
+	max_hull = def["hull"]
+	max_quad_shield = def["shield_per_quad"]
+	max_buffer = def["buffer_max"]
+	total_power = def["power"]
+	
+	if ship_id == "SHIP_GUARANI":
+		speed_factor = 1.4
+	elif ship_id == "SHIP_TAMANDARE":
+		speed_factor = 0.7
+	else:
+		speed_factor = 1.0
+		
+	quadrants = {
+		"FWD": max_quad_shield,
+		"AFT": max_quad_shield,
+		"PORT": max_quad_shield,
+		"STBD": max_quad_shield
+	}
+
 	if not custom_crew.is_empty():
 		crew = custom_crew
 	else:
-		# Tripulação Padrão Inicial
 		var roster = CrewMemberScript.get_available_roster()
 		crew["PILOT"] = roster["PILOT"][0]       # Ten. Moreira
 		crew["ENGINEER"] = roster["ENGINEER"][0] # Eng. Barbosa
 		crew["MEDICAL"] = roster["MEDICAL"][0]   # Dr. Vital
 		crew["TACTICAL"] = roster["TACTICAL"][0] # Ten. Tibúrcio
 
-	# Aplica traços iniciais de Prós/Contras
+	# Traço do Engenheiro Barbosa: Milagreiro (+2 MW extras em qualquer nave!)
 	if crew.has("ENGINEER") and crew["ENGINEER"].id == "ENG_BARBOSA":
-		total_power = 12 # Bônus do Milagreiro: +2 MW no Reator!
-	else:
-		total_power = 10
+		total_power += 2
 
 func get_used_power() -> int:
 	var total = 0
@@ -135,7 +167,8 @@ func get_system_efficiency(sys_name: String) -> float:
 
 func get_average_shield() -> int:
 	var total = quadrants["FWD"] + quadrants["AFT"] + quadrants["PORT"] + quadrants["STBD"]
-	return int(total / 4.0)
+	var max_total = float(max_quad_shield * 4)
+	return int((total / max_total) * 100.0)
 
 # Dano direcionado ao quadrante atingido
 func apply_directional_damage(amount: int, target_quadrant: String) -> Dictionary:
@@ -152,7 +185,6 @@ func apply_directional_damage(amount: int, target_quadrant: String) -> Dictionar
 		alert_state = "ALERTA VERMELHO"
 	else:
 		var q_shield = quadrants.get(target_quadrant, 0)
-		# Traço da Ten. Dandara: Escudos absorvem +25% a mais de dano
 		var absorption_multiplier = 1.25 if (crew.has("TACTICAL") and crew["TACTICAL"].id == "TAC_DANDARA") else 1.0
 		var effective_shield = int(q_shield * absorption_multiplier)
 		
@@ -167,9 +199,9 @@ func apply_directional_damage(amount: int, target_quadrant: String) -> Dictionar
 			result["hull_damage"] = leftover
 			result["shield_collapsed"] = true
 			
-	if hull < 40:
+	if hull < int(max_hull * 0.4):
 		alert_state = "ALERTA VERMELHO"
-	elif hull < 75 and alert_state == "NORMAL":
+	elif hull < int(max_hull * 0.75) and alert_state == "NORMAL":
 		alert_state = "ALERTA AMARELO"
 		
 	status_changed.emit(hull, get_average_shield(), alert_state)
@@ -192,15 +224,15 @@ func regenerate_shields() -> void:
 	if shield_pwr > 0 and not transporter_active:
 		var regen_pool = int(shield_pwr * 4.0 * get_system_efficiency("ESCUDOS"))
 		for q in ["FWD", "AFT", "PORT", "STBD"]:
-			if quadrants[q] < 100 and regen_pool > 0:
-				var needed = 100 - quadrants[q]
+			if quadrants[q] < max_quad_shield and regen_pool > 0:
+				var needed = max_quad_shield - quadrants[q]
 				var grant = min(needed, regen_pool)
 				quadrants[q] += grant
 				regen_pool -= grant
 		status_changed.emit(hull, get_average_shield(), alert_state)
 		quadrants_changed.emit(quadrants, heading)
 
-# Transfere civis do Baependi para a Plataforma de Teletransporte (Buffer max 50)
+# Transfere civis do Baependi para a Plataforma de Teletransporte
 func beam_to_buffer(amount: int) -> Dictionary:
 	var space_in_buffer = max_buffer - transporter_buffer
 	if space_in_buffer <= 0:
@@ -217,14 +249,13 @@ func process_medical_triage() -> Dictionary:
 	var med: CrewMember = crew.get("MEDICAL")
 	var pwr_support = systems.get("SUPORTE", 1)
 	
-	var rate = 20 # Taxa padrão por pulso
+	var rate = 20
 	if med:
 		if med.id == "MED_VITAL":
-			rate = 40 # Cirurgião de trauma: 2x mais rápido!
+			rate = 40
 		elif med.id == "MED_NABUCO":
-			rate = 15 # Bioquímica metódica: 25% mais lenta
+			rate = 15
 			
-	# Se suporte de vida estiver baixo, taxa cai pela metade
 	if pwr_support == 0:
 		rate = max(5, int(rate * 0.3))
 		life_support_zero_ticks += 1
@@ -238,13 +269,10 @@ func process_medical_triage() -> Dictionary:
 	var casualties = 0
 	var msg = ""
 	
-	# Checagem de fatalidades por falta de suporte de vida
 	if pwr_support == 0:
 		if med and med.id == "MED_VITAL":
-			# Dr. Vital depende de UTI ligada: baixas imediatas!
 			casualties = randi_range(3, 8)
 		elif med and med.id == "MED_NABUCO":
-			# Dra. Nabuco tem soro: aguenta 3 pulsos sem perdas!
 			if life_support_zero_ticks > 3:
 				casualties = randi_range(2, 5)
 		else:
