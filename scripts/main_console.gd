@@ -52,7 +52,8 @@ func _ready() -> void:
 	sfx = SoundEffectsScript.new()
 	add_child(sfx)
 	
-	ship = ShipDataScript.new()
+	# Inicializa nave com a tripulação selecionada no Briefing
+	ship = ShipDataScript.new(GameState.selected_crew)
 	radar = TacticalRadarScript.new()
 	
 	_setup_power_grid_ui()
@@ -60,9 +61,13 @@ func _ready() -> void:
 	
 	_log("[color=#33ff66]====================================================[/color]")
 	_log("[color=#33ff66]** SIMULAÇÃO TÁTICA DE ALCÂNTARA // PROTOCOLO BAEPENDI **[/color]")
-	_log("[color=#33ff66]SETOR: DMZ ABROLHOS // NAVE: CCS JOÃO CÂNDIDO (NX-900)[/color]")
+	_log("[color=#33ff66]SETOR: DMZ ABROLHOS // NAVE: %s[/color]" % ship.ship_name)
 	_log("[color=#33ff66]====================================================[/color]")
-	_log("[color=#ffff66]! EMERGÊNCIA: Cargueiro Baependi torpedeado pela Falange Fascista.[/color]")
+	_log("[color=#55ffff]OFICIAIS DESIGNADOS PARA A MISSÃO:[/color]")
+	for role_key in ship.crew:
+		var c = ship.crew[role_key]
+		_log("[color=#aaffaa] * %s (%s) \"%s\" -> Pró: %s[/color]" % [c.name, c.role_title, c.callsign, c.pro_title])
+	_log("[color=#ffff66]\n! EMERGÊNCIA: Cargueiro Baependi torpedeado pela Falange Fascista.[/color]")
 	_log("[color=#ffaaaa]Ordens: Aproxime-se, baixe os escudos para teletransportar os 380 civis.[/color]")
 	_log("[color=#55ffff]DICA: Use [ESPAÇO] para Pausa Tática a qualquer momento.[/color]\n")
 	
@@ -76,7 +81,6 @@ func _process(delta: float) -> void:
 	if is_game_over:
 		return
 		
-	# Atualiza o relógio de colapso mesmo entre ticks se despausado
 	if not is_paused:
 		var collapsed = radar.tick_collapse_timer(delta)
 		_update_header_status()
@@ -91,6 +95,7 @@ func _process(delta: float) -> void:
 			_advance_tactical_tick()
 
 func _toggle_pause() -> void:
+	if is_game_over: return
 	is_paused = not is_paused
 	sfx.play_click()
 	if is_paused:
@@ -104,14 +109,22 @@ func _advance_tactical_tick() -> void:
 	tick_count += 1
 	stardate += 0.1
 	
-	# Regeneração contínua de escudos se não estiver transportando
+	# 1. Regeneração contínua de escudos se não estiver transportando
 	ship.regenerate_shields()
 	
-	# Processo de Teletransporte de Civis se ativo
+	# 2. Processo de Teletransporte de Civis (Cargueiro -> Plataforma)
 	if ship.transporter_active:
 		_process_transporter_tick()
 		
-	# Avanço do radar e dos projéteis inimigos
+	# 3. Triagem da Baia Médica (Plataforma -> Alojamentos Seguros)
+	var triage_res = ship.process_medical_triage()
+	if triage_res["processed"] > 0:
+		_log("[color=#aaffaa]>> BAIAS MÉDICAS: %d civis estabilizados e alocados nos alojamentos.[/color]" % triage_res["processed"])
+	if triage_res["casualties"] > 0:
+		_log("[color=#ff2222]! %s[/color]" % triage_res["msg"])
+		sfx.play_alert()
+		
+	# 4. Avanço do radar e dos projéteis inimigos
 	var engine_eff = ship.get_system_efficiency("MOTORES")
 	var tick_result = radar.update_tactical_tick(engine_eff, ship.heading)
 	
@@ -120,7 +133,7 @@ func _advance_tactical_tick() -> void:
 		if "TORPEDO" in ev:
 			sfx.play_torpedo_warning()
 			
-	# Processa impactos de torpedos que atingiram a nave
+	# 5. Processa impactos de torpedos que atingiram a nave
 	for hit in tick_result["torpedo_hits"]:
 		var dmg_result = ship.apply_directional_damage(hit["damage"], hit["quadrant"])
 		sfx.play_alert()
@@ -142,17 +155,25 @@ func _process_transporter_tick() -> void:
 			break
 			
 	if km_contact and not radar.km_is_destroyed:
-		if km_contact.distance_km <= 1200:
-			var beamed = ship.beam_civilians(45)
-			if beamed > 0:
+		# Traço do Ten. Araripe: Alcance de teletransporte expandido para 1500 KM!
+		var max_range = 1500 if (ship.crew.has("PILOT") and ship.crew["PILOT"].id == "PILOT_ARARIPE") else 1200
+		
+		if km_contact.distance_km <= max_range:
+			var beam_res = ship.beam_to_buffer(40)
+			if beam_res["beamed"] > 0:
 				sfx.play_transporter()
-				_log("[color=#55ffff]>> FEIXE DE TRANSPORTE: +%d civis a bordo! (Total: %d/%d)[/color]" % [beamed, ship.civilians_rescued, ship.total_civilians])
-				if ship.civilians_rescued >= ship.total_civilians:
-					_log("[color=#33ff33]** SUCESSO TOTAL: TODOS OS 380 CIVIS FORAM RESGATADOS! **[/color]")
-					ship.transporter_active = false
-					btn_transport.text = "[ TELETRANSPORTE (CONCLUÍDO) ]"
+				_log("[color=#55ffff]>> FEIXE DE TRANSPORTE: +%d civis na plataforma! (Buffer: %d/%d)[/color]" % [beam_res["beamed"], ship.transporter_buffer, ship.max_buffer])
+				
+			if beam_res["buffer_full"]:
+				var med_name = ship.crew["MEDICAL"].name if ship.crew.has("MEDICAL") else "Equipe Médica"
+				_log("[color=#ffaa33]> PLATAFORMA LOTADA (50/50)! Aguardando %s liberar as macas![/color]" % med_name)
+				
+			if (ship.civilians_rescued + ship.transporter_buffer) >= ship.total_civilians:
+				_log("[color=#33ff33]** SUCESSO DE EVACUAÇÃO: TODOS OS CIVIS FORAM RETIRADOS DO BAEPENDI! **[/color]")
+				ship.transporter_active = false
+				btn_transport.text = "[ TELETRANSPORTE (CONCLUÍDO) ]"
 		else:
-			_log("[color=#ffaa55]> Teletransporte ineficaz: Cargueiro Baependi fora de alcance (%d KM). Aproxime-se a < 1200 KM![/color]" % km_contact.distance_km)
+			_log("[color=#ffaa55]> Teletransporte ineficaz: Baependi fora de alcance (%d KM). Aproxime-se a < %d KM![/color]" % [km_contact.distance_km, max_range])
 
 func _setup_power_grid_ui() -> void:
 	var sys_list = ["MOTORES", "ESCUDOS", "SENSORES", "LASERS", "SUPORTE"]
@@ -194,6 +215,8 @@ func _on_power_adjust(sys_name: String, delta: int) -> void:
 		sfx.play_click()
 	else:
 		sfx.play_error()
+		if sys_name == "SUPORTE" and ship.crew.has("ENGINEER") and ship.crew["ENGINEER"].id == "ENG_BARBOSA":
+			_log("[color=#ffaa55]Eng. Barbosa: \"Capitão, não vou desligar o oxigênio da nossa tripulação e dos civis! Não insista!\"[/color]")
 	_update_power_grid_display()
 
 func _on_ship_power_changed(_sys_name: String, _val: int, _available: int) -> void:
@@ -225,7 +248,8 @@ func _update_header_status() -> void:
 	else:
 		lbl_collapse_timer.modulate = Color(0.3, 1.0, 0.45)
 		
-	lbl_rescued.text = "CIVIS SALVOS: %d/%d" % [ship.civilians_rescued, ship.total_civilians]
+	var cas_str = " | BAIXAS: %d" % ship.civilians_casualties if ship.civilians_casualties > 0 else ""
+	lbl_rescued.text = "CIVIS: %d/380 [PLATAFORMA: %d/50]%s" % [ship.civilians_rescued, ship.transporter_buffer, cas_str]
 	lbl_hull.text = "CASCO: %3d%%" % ship.hull
 	
 	if ship.transporter_active:
@@ -306,7 +330,7 @@ func _on_action_transport_toggle() -> void:
 		sfx.play_alert()
 		btn_transport.text = "[ TELETRANSPORTE (ATIVO!) ]"
 		_log("[color=#ff4444]! ALERTA DE PROCEDIMENTO: Escudos desativados para operação de teletransporte![/color]")
-		_log("[color=#ffaaaa]A nave está completamente vulnerável a impactos de torpedo enquanto transportar![/color]")
+		_log("[color=#ffaaaa]A nave está vulnerável a impactos de torpedo enquanto a plataforma estiver energizada![/color]")
 	else:
 		sfx.play_click()
 		btn_transport.text = "[ TELETRANSPORTE (OFF) ]"
@@ -325,7 +349,10 @@ func _on_action_fire_or_intercept() -> void:
 	sfx.play_laser()
 	# Se houver torpedos em vôo, tenta interceptar primeiro
 	if not radar.active_torpedoes.is_empty():
-		var intercept_res = radar.intercept_nearest_torpedo(weapon_eff)
+		var is_tiburcio = ship.crew.has("TACTICAL") and ship.crew["TACTICAL"].id == "TAC_TIBURCIO"
+		var custom_laser_eff = 0.95 if is_tiburcio else weapon_eff
+		
+		var intercept_res = radar.intercept_nearest_torpedo(custom_laser_eff)
 		if intercept_res["success"]:
 			_log("[color=#55ff55]** SUCESSO: %s **[/color]" % intercept_res["message"])
 		else:
@@ -339,7 +366,8 @@ func _on_action_fire_or_intercept() -> void:
 				min_dist = c.distance_km
 				target = c
 		if target:
-			var dmg = int(25 * weapon_eff * randf_range(0.8, 1.3))
+			var dmg_multiplier = 0.8 if (ship.crew.has("TACTICAL") and ship.crew["TACTICAL"].id == "TAC_DANDARA") else 1.0
+			var dmg = int(25 * weapon_eff * dmg_multiplier * randf_range(0.8, 1.3))
 			target.hull = max(0, target.hull - dmg)
 			_log("[color=#ffaa33]> Disparando baterias de feixes em %s! Causou %d de dano.[/color]" % [target.name, dmg])
 			if target.hull <= 0:
@@ -374,7 +402,9 @@ func _on_action_repair() -> void:
 	var eng = ship.crew.get("ENGINEER")
 	if eng and eng.trust >= 60:
 		sfx.play_beep(440.0, 0.08, 0.25)
-		var repair_amt = randi_range(12, 22)
+		# Traço da Ten. Clara: Reparo em dobro!
+		var repair_multiplier = 2.0 if eng.id == "ENG_CLARA" else 1.0
+		var repair_amt = int(randi_range(12, 20) * repair_multiplier)
 		ship.hull = min(ship.max_hull, ship.hull + repair_amt)
 		_log("[color=#33ff66]> Equipes de avaria selaram brechas estruturais! +%d%% de Casco.[/color]" % repair_amt)
 		_update_header_status()
@@ -395,11 +425,16 @@ func _game_over(reason: String) -> void:
 	_log("\n[color=#ff3333]====================================================[/color]")
 	_log("[color=#ff3333]*** %s ***[/color]" % reason)
 	_log("[color=#ffaa33]AVALIAÇÃO DA ACADEMIA ESPACIAL DE ALCÂNTARA:[/color]")
-	_log("[color=#ffffaa]- Civis Resgatados: %d / %d[/color]" % [ship.civilians_rescued, ship.total_civilians])
+	_log("[color=#ffffaa]- Civis Resgatados e Acolhidos: %d / %d[/color]" % [ship.civilians_rescued, ship.total_civilians])
+	_log("[color=#ffffaa]- Baixas Hospitalares: %d[/color]" % ship.civilians_casualties)
 	_log("[color=#ffffaa]- Tempo de Sobrevivência: %d pulsos táticos[/color]" % tick_count)
 	_log("[color=#ffffaa]- Moral da Tripulação: %d%%[/color]" % ship.crew["PILOT"].trust)
-	_log("[color=#ffffaa]- Veredito: O Protocolo Baependi avalia a fibra moral e liderança diante do sacrifício inevitável.[/color]")
+	_log("[color=#ffffaa]- Veredito: O Protocolo Baependi avalia a liderança e sacrifício diante da derrota inevitável.[/color]")
 	_log("[color=#ff3333]====================================================[/color]")
+	
+	btn_pause.text = "[ VOLTAR À SELEÇÃO DE TRIPULAÇÃO ]"
+	btn_pause.pressed.disconnect(_toggle_pause)
+	btn_pause.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/crew_selection.tscn"))
 
 func _log(bbcode: String) -> void:
 	txt_log.append_text(bbcode + "\n")

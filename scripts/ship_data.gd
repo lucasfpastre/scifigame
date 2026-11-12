@@ -6,7 +6,7 @@ const CrewMemberScript = preload("res://scripts/crew_member.gd")
 signal power_changed(system_name: String, value: int, available_power: int)
 signal status_changed(hull: int, shield: int, alert_level: String)
 signal quadrants_changed(quadrants: Dictionary, heading: int)
-signal rescue_progress(rescued: int, total: int)
+signal rescue_progress(rescued: int, buffer: int, total: int, casualties: int)
 signal crew_intercom(speaker: String, text: String)
 
 var ship_name: String = "CCS JOÃO CÂNDIDO // NX-900"
@@ -26,13 +26,17 @@ var quadrants: Dictionary = {
 # Orientação da nave: 0 = Norte (Proa aponta para cima), 90 = Leste, 180 = Sul, 270 = Oeste
 var heading: int = 0
 
-# Mecânica de Resgate da Kobayashi Maru
+# Mecânica de Resgate e Buffer da Baia Médica
+var transporter_buffer: int = 0
+var max_buffer: int = 50
 var civilians_rescued: int = 0
+var civilians_casualties: int = 0
 var total_civilians: int = 380
 var transporter_active: bool = false
 var chaff_count: int = 3
+var life_support_zero_ticks: int = 0
 
-# Sistemas e energia alocada (0 a 4)
+# Sistemas e energia alocada
 var systems: Dictionary = {
 	"MOTORES": 2,
 	"ESCUDOS": 2,
@@ -44,11 +48,22 @@ var systems: Dictionary = {
 # Tripulação da nave
 var crew: Dictionary = {}
 
-func _init() -> void:
-	crew["PILOT"] = CrewMemberScript.new(CrewMemberScript.Role.PILOT, "Ten. Moreira", 75)
-	crew["ENGINEER"] = CrewMemberScript.new(CrewMemberScript.Role.ENGINEER, "Eng. Barbosa", 80)
-	crew["SCIENCE"] = CrewMemberScript.new(CrewMemberScript.Role.SCIENCE, "Dra. Dandara", 65)
-	crew["TACTICAL"] = CrewMemberScript.new(CrewMemberScript.Role.TACTICAL, "Ten. Araripe", 70)
+func _init(custom_crew: Dictionary = {}) -> void:
+	if not custom_crew.is_empty():
+		crew = custom_crew
+	else:
+		# Tripulação Padrão Inicial
+		var roster = CrewMemberScript.get_available_roster()
+		crew["PILOT"] = roster["PILOT"][0]       # Ten. Moreira
+		crew["ENGINEER"] = roster["ENGINEER"][0] # Eng. Barbosa
+		crew["MEDICAL"] = roster["MEDICAL"][0]   # Dr. Vital
+		crew["TACTICAL"] = roster["TACTICAL"][0] # Ten. Tibúrcio
+
+	# Aplica traços iniciais de Prós/Contras
+	if crew.has("ENGINEER") and crew["ENGINEER"].id == "ENG_BARBOSA":
+		total_power = 12 # Bônus do Milagreiro: +2 MW no Reator!
+	else:
+		total_power = 10
 
 func get_used_power() -> int:
 	var total = 0
@@ -67,6 +82,9 @@ func can_increase_power(sys_name: String) -> bool:
 func can_decrease_power(sys_name: String) -> bool:
 	if not systems.has(sys_name):
 		return false
+	# Traço do Eng. Barbosa: Recusa-se a desligar o Suporte de Vida (mínimo 1 MW)
+	if sys_name == "SUPORTE" and crew.has("ENGINEER") and crew["ENGINEER"].id == "ENG_BARBOSA":
+		return systems["SUPORTE"] > 1
 	return systems[sys_name] > 0
 
 func adjust_power(sys_name: String, delta: int) -> bool:
@@ -88,8 +106,9 @@ func _trigger_crew_power_reaction(sys_name: String, new_val: int) -> void:
 	var member = null
 	match sys_name:
 		"MOTORES": member = crew.get("PILOT")
-		"ESCUDOS", "SUPORTE": member = crew.get("ENGINEER")
-		"SENSORES": member = crew.get("SCIENCE")
+		"ESCUDOS": member = crew.get("ENGINEER")
+		"SUPORTE": member = crew.get("MEDICAL") if new_val == 0 else crew.get("ENGINEER")
+		"SENSORES": member = crew.get("PILOT")
 		"LASERS": member = crew.get("TACTICAL")
 		
 	if member:
@@ -103,8 +122,9 @@ func get_system_efficiency(sys_name: String) -> float:
 	match sys_name:
 		"MOTORES": member = crew.get("PILOT")
 		"ESCUDOS": member = crew.get("ENGINEER")
-		"SENSORES": member = crew.get("SCIENCE")
+		"SENSORES": member = crew.get("PILOT")
 		"LASERS": member = crew.get("TACTICAL")
+		"SUPORTE": member = crew.get("MEDICAL")
 		
 	var crew_factor = member.get_efficiency_factor() if member else 1.0
 	
@@ -117,7 +137,7 @@ func get_average_shield() -> int:
 	var total = quadrants["FWD"] + quadrants["AFT"] + quadrants["PORT"] + quadrants["STBD"]
 	return int(total / 4.0)
 
-# Dano direcionado ao quadrante atingido (se escudos estiverem baixados pelo teletransporte, vai direto pro casco!)
+# Dano direcionado ao quadrante atingido
 func apply_directional_damage(amount: int, target_quadrant: String) -> Dictionary:
 	var result = {
 		"quadrant": target_quadrant,
@@ -127,14 +147,18 @@ func apply_directional_damage(amount: int, target_quadrant: String) -> Dictionar
 	}
 	
 	if transporter_active:
-		# Teletransporte ativo: escudos estão baixados! Dano penetra integralmente no casco!
 		hull = max(0, hull - amount)
 		result["hull_damage"] = amount
 		alert_state = "ALERTA VERMELHO"
 	else:
 		var q_shield = quadrants.get(target_quadrant, 0)
-		var absorbed = min(q_shield, amount)
-		quadrants[target_quadrant] -= absorbed
+		# Traço da Ten. Dandara: Escudos absorvem +25% a mais de dano
+		var absorption_multiplier = 1.25 if (crew.has("TACTICAL") and crew["TACTICAL"].id == "TAC_DANDARA") else 1.0
+		var effective_shield = int(q_shield * absorption_multiplier)
+		
+		var absorbed = min(effective_shield, amount)
+		var actual_shield_loss = int(absorbed / absorption_multiplier)
+		quadrants[target_quadrant] = max(0, quadrants[target_quadrant] - actual_shield_loss)
 		result["shield_absorbed"] = absorbed
 		
 		var leftover = amount - absorbed
@@ -156,7 +180,6 @@ func apply_directional_damage(amount: int, target_quadrant: String) -> Dictionar
 	crew_intercom.emit(random_officer.avatar_ascii, random_officer.get_damage_reaction())
 	return result
 
-# Gira a nave em 90 graus (manobra de leme do piloto)
 func rotate_ship_90() -> void:
 	heading = (heading + 90) % 360
 	quadrants_changed.emit(quadrants, heading)
@@ -164,7 +187,6 @@ func rotate_ship_90() -> void:
 	if pilot:
 		crew_intercom.emit(pilot.avatar_ascii, "%s: \"Executando manobra de giro! Proa alinhada para %d°.\"" % [pilot.name, heading])
 
-# Regenera escudos nos quadrantes danificados
 func regenerate_shields() -> void:
 	var shield_pwr = systems.get("ESCUDOS", 0)
 	if shield_pwr > 0 and not transporter_active:
@@ -178,10 +200,61 @@ func regenerate_shields() -> void:
 		status_changed.emit(hull, get_average_shield(), alert_state)
 		quadrants_changed.emit(quadrants, heading)
 
-# Transfere civis da Kobayashi Maru
-func beam_civilians(amount: int) -> int:
-	var remaining = total_civilians - civilians_rescued
-	var to_beam = min(remaining, amount)
-	civilians_rescued += to_beam
-	rescue_progress.emit(civilians_rescued, total_civilians)
-	return to_beam
+# Transfere civis do Baependi para a Plataforma de Teletransporte (Buffer max 50)
+func beam_to_buffer(amount: int) -> Dictionary:
+	var space_in_buffer = max_buffer - transporter_buffer
+	if space_in_buffer <= 0:
+		return { "beamed": 0, "buffer_full": true }
+		
+	var remaining_in_baependi = total_civilians - (civilians_rescued + transporter_buffer + civilians_casualties)
+	var to_beam = min(space_in_buffer, min(remaining_in_baependi, amount))
+	transporter_buffer += to_beam
+	rescue_progress.emit(civilians_rescued, transporter_buffer, total_civilians, civilians_casualties)
+	return { "beamed": to_beam, "buffer_full": transporter_buffer >= max_buffer }
+
+# Baia Médica processa civis do buffer e os transfere para os alojamentos seguros
+func process_medical_triage() -> Dictionary:
+	var med: CrewMember = crew.get("MEDICAL")
+	var pwr_support = systems.get("SUPORTE", 1)
+	
+	var rate = 20 # Taxa padrão por pulso
+	if med:
+		if med.id == "MED_VITAL":
+			rate = 40 # Cirurgião de trauma: 2x mais rápido!
+		elif med.id == "MED_NABUCO":
+			rate = 15 # Bioquímica metódica: 25% mais lenta
+			
+	# Se suporte de vida estiver baixo, taxa cai pela metade
+	if pwr_support == 0:
+		rate = max(5, int(rate * 0.3))
+		life_support_zero_ticks += 1
+	else:
+		life_support_zero_ticks = 0
+		
+	var processed = min(transporter_buffer, rate)
+	transporter_buffer -= processed
+	civilians_rescued += processed
+	
+	var casualties = 0
+	var msg = ""
+	
+	# Checagem de fatalidades por falta de suporte de vida
+	if pwr_support == 0:
+		if med and med.id == "MED_VITAL":
+			# Dr. Vital depende de UTI ligada: baixas imediatas!
+			casualties = randi_range(3, 8)
+		elif med and med.id == "MED_NABUCO":
+			# Dra. Nabuco tem soro: aguenta 3 pulsos sem perdas!
+			if life_support_zero_ticks > 3:
+				casualties = randi_range(2, 5)
+		else:
+			casualties = randi_range(2, 6)
+			
+	if casualties > 0:
+		casualties = min(civilians_rescued, casualties)
+		civilians_rescued -= casualties
+		civilians_casualties += casualties
+		msg = "ALERTA MÉDICO: A Baia Médica perdeu %d civis por falta de oxigênio/temperatura!" % casualties
+		
+	rescue_progress.emit(civilians_rescued, transporter_buffer, total_civilians, civilians_casualties)
+	return { "processed": processed, "casualties": casualties, "msg": msg }
