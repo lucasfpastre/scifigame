@@ -31,6 +31,7 @@ var sfx = null
 
 # Botões de Ação na Barra Inferior
 @onready var btn_pause: Button = %BtnPause
+@onready var btn_speed: Button = %BtnSpeed
 @onready var btn_transport: Button = %BtnTransport
 @onready var btn_fire: Button = %BtnFire
 @onready var btn_chaff: Button = %BtnChaff
@@ -43,8 +44,10 @@ var power_ui: Dictionary = {}
 # Controle de Tempo e Loop Semi-Real-Time
 var is_paused: bool = false
 var is_game_over: bool = false
+var speed_multiplier: float = 1.0
+var base_tick_interval: float = 2.4 # 2.4s por pulso em 1.0x (cadência tática legível)
+var tick_interval: float = 2.4
 var tick_accumulator: float = 0.0
-var tick_interval: float = 1.4 # Segundos por pulso tático
 var stardate: float = 4312.1
 var tick_count: int = 1
 
@@ -76,13 +79,20 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_accept") or (event is InputEventKey and event.pressed and event.keycode == KEY_SPACE):
 		_toggle_pause()
+	elif event is InputEventKey and event.pressed and not is_game_over:
+		if event.keycode == KEY_1:
+			_set_speed(0.5)
+		elif event.keycode == KEY_2:
+			_set_speed(1.0)
+		elif event.keycode == KEY_3:
+			_set_speed(1.5)
 
 func _process(delta: float) -> void:
 	if is_game_over:
 		return
 		
 	if not is_paused:
-		var collapsed = radar.tick_collapse_timer(delta)
+		var collapsed = radar.tick_collapse_timer(delta * speed_multiplier)
 		_update_header_status()
 		if collapsed:
 			_log("[color=#ff1111]*** CATÁSTROFE: O CASCO DO CARGUEIRO BAEPENDI COLAPSOU! ***[/color]")
@@ -99,11 +109,30 @@ func _toggle_pause() -> void:
 	is_paused = not is_paused
 	sfx.play_click()
 	if is_paused:
-		btn_pause.text = "[ ▶ RETOMAR TEMPO ]"
+		btn_pause.text = "[ ▶ CONTINUAR ]"
 		_log("[color=#ffff55]> SIMULAÇÃO CONGELADA (PAUSA TÁTICA)[/color]")
 	else:
-		btn_pause.text = "[ || PAUSA TÁTICA ]"
-		_log("[color=#33ff66]> SIMULAÇÃO RETOMADA EM TEMPO REAL[/color]")
+		btn_pause.text = "[ || PAUSA ]"
+		_log("[color=#33ff66]> SIMULAÇÃO RETOMADA (%.1fx)[/color]" % speed_multiplier)
+
+func _on_speed_toggle() -> void:
+	if is_game_over: return
+	sfx.play_click()
+	if speed_multiplier == 1.0:
+		_set_speed(1.5)
+	elif speed_multiplier == 1.5:
+		_set_speed(0.5)
+	else:
+		_set_speed(1.0)
+
+func _set_speed(new_speed: float) -> void:
+	speed_multiplier = new_speed
+	tick_interval = base_tick_interval / speed_multiplier
+	var label_tag = "NOR"
+	if speed_multiplier == 0.5: label_tag = "LEN"
+	elif speed_multiplier == 1.5: label_tag = "RAP"
+	btn_speed.text = "[ %.1fx %s ]" % [speed_multiplier, label_tag]
+	_log("[color=#55ffff]> Velocidade tática ajustada para %.1fx (%s)[/color]" % [speed_multiplier, label_tag])
 
 func _advance_tactical_tick() -> void:
 	tick_count += 1
@@ -202,6 +231,7 @@ func _connect_events() -> void:
 	ship.crew_intercom.connect(_on_crew_intercom)
 	
 	btn_pause.pressed.connect(_toggle_pause)
+	btn_speed.pressed.connect(_on_speed_toggle)
 	btn_rotate.pressed.connect(_on_action_rotate)
 	btn_transport.pressed.connect(_on_action_transport_toggle)
 	btn_fire.pressed.connect(_on_action_fire_or_intercept)

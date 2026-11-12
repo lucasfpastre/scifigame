@@ -355,6 +355,12 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "[ || PAUSA ]"
 
+[node name="BtnSpeed" type="Button" parent="Margin/Layout/ActionBar/HBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(85, 0)
+layout_mode = 2
+text = "[ 1.0x ]"
+
 [node name="BtnTransport" type="Button" parent="Margin/Layout/ActionBar/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
