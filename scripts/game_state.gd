@@ -113,7 +113,7 @@ static func unlock_ship(ship_id: String) -> bool:
 
 # Registra a partida e calcula a pontuação e avaliação oficial da Academia
 static func record_run_result(civilians_saved: int, casualties: int, ticks_survived: int,
-		torpedoes_intercepted: int, cruisers_destroyed: int, reason: String) -> Dictionary:
+		torpedoes_intercepted: int, cruisers_destroyed: int, reason: String, is_hacked: bool = false) -> Dictionary:
 	total_runs += 1
 	lifetime_civilians_saved += civilians_saved
 	lifetime_casualties += casualties
@@ -134,13 +134,17 @@ static func record_run_result(civilians_saved: int, casualties: int, ticks_survi
 		total_score += ethical_bonus
 		
 	var pha_earned = int(total_score * 0.1) # Converte pontos em moeda PHA (10% do score)
-	pha += pha_earned
 	
 	# Patente Militar Concedida
 	var rank_title = "Cadete de 3ª Classe"
 	var evaluation = "Ainda há muito a aprender sobre o peso do comando e a frieza sob fogo."
 	
-	if total_score >= 3200:
+	if is_hacked:
+		total_score += 1500
+		pha_earned += 300
+		rank_title = "ESTRATEGISTA LENDÁRIO // PROTOCOLO ALMIRANTE 1910"
+		evaluation = "VIOLAÇÃO DO PROTOCOLO DE ALCÂNTARA: O cadete reprogramou o mainframe da simulação e salvou a tripulação sem aceitar o cenário sem vitória. Um ato de insubordinação genial digno da história da Frota."
+	elif total_score >= 3200:
 		rank_title = "Comandante Honorário // Medalha Almirante Negro"
 		evaluation = "Desempenho lendário. O resgate quase total do Baependi entrará para a história militar da Coalizão."
 	elif total_score >= 2200:
@@ -159,6 +163,8 @@ static func record_run_result(civilians_saved: int, casualties: int, ticks_survi
 		rank_title = "Aspirante a Oficial"
 		evaluation = "Primeiros passos sob fogo real. Mantenha a calma na próxima simulação."
 		
+	pha += pha_earned
+	
 	var debrief = {
 		"run_number": total_runs,
 		"ship_name": get_ship_definitions().get(selected_ship_id, {}).get("name", "CCS João Cândido"),
@@ -176,7 +182,8 @@ static func record_run_result(civilians_saved: int, casualties: int, ticks_survi
 		"pha_earned": pha_earned,
 		"rank_title": rank_title,
 		"evaluation": evaluation,
-		"reason": reason
+		"reason": reason,
+		"is_hacked": is_hacked
 	}
 	
 	last_debriefing = debrief
@@ -186,6 +193,7 @@ static func record_run_result(civilians_saved: int, casualties: int, ticks_survi
 		"score": total_score,
 		"rank": rank_title,
 		"civilians": civilians_saved,
+		"hacked": is_hacked,
 		"date_run": Time.get_datetime_string_from_system()
 	})
 	

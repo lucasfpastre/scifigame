@@ -37,6 +37,22 @@ var sfx = null
 @onready var btn_chaff: Button = %BtnChaff
 @onready var btn_repair: Button = %BtnRepair
 @onready var btn_comms: Button = %BtnComms
+@onready var btn_terminal: Button = %BtnTerminal
+
+# Modal do Terminal de Hacking / Depuração
+@onready var hack_modal: ColorRect = %HackModal
+@onready var btn_close_hack: Button = %BtnCloseHack
+@onready var txt_hack_terminal: RichTextLabel = %TxtHackTerminal
+@onready var btn_hack_help: Button = %BtnHackHelp
+@onready var btn_hack_logs: Button = %BtnHackLogs
+@onready var btn_hack_scan: Button = %BtnHackScan
+@onready var btn_hack_exploit: Button = %BtnHackExploit
+@onready var input_hack_cmd: LineEdit = %InputHackCmd
+@onready var btn_submit_hack: Button = %BtnSubmitHack
+
+var is_simulation_hacked: bool = false
+var hack_exploit_discovered: bool = false
+var comms_intercept_count: int = 0
 
 # CRT Overlay & Efeitos Visuais / Glitch
 @onready var crt_overlay: ColorRect = %CRTOverlay
@@ -90,10 +106,17 @@ func _ready() -> void:
 	_update_all_displays()
 
 func _input(event: InputEvent) -> void:
+	if hack_modal and hack_modal.visible:
+		if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+			_close_hack_terminal()
+		return
+		
 	if event.is_action_pressed("ui_accept") or (event is InputEventKey and event.pressed and event.keycode == KEY_SPACE):
 		_toggle_pause()
 	elif event is InputEventKey and event.pressed and not is_game_over:
-		if event.keycode == KEY_1:
+		if event.keycode == KEY_QUOTELEFT or event.keycode == KEY_F1:
+			_open_hack_terminal()
+		elif event.keycode == KEY_1:
 			_set_speed(0.5)
 		elif event.keycode == KEY_2:
 			_set_speed(1.0)
@@ -237,6 +260,10 @@ func _advance_tactical_tick() -> void:
 		_log("[color=#ff2222]! %s[/color]" % triage_res["msg"])
 		sfx.play_alert()
 		
+	if ship.civilians_rescued >= ship.total_civilians and not is_game_over:
+		_game_over("MISSÃO CUMPRIDA: TODOS OS 380 PASSAGEIROS RESGATADOS E ESTABILIZADOS!")
+		return
+		
 	# 4. Avanço do radar, emboscada escalonada e projéteis inimigos
 	var engine_eff = ship.get_system_efficiency("MOTORES")
 	var tick_result = radar.update_tactical_tick(engine_eff, ship.heading, ship.transporter_active)
@@ -335,6 +362,15 @@ func _connect_events() -> void:
 	btn_chaff.pressed.connect(_on_action_chaff)
 	btn_repair.pressed.connect(_on_action_repair)
 	btn_comms.pressed.connect(_on_action_comms)
+	btn_terminal.pressed.connect(_open_hack_terminal)
+	
+	btn_close_hack.pressed.connect(_close_hack_terminal)
+	btn_hack_help.pressed.connect(func(): _execute_hack_command("AJUDA"))
+	btn_hack_logs.pressed.connect(func(): _execute_hack_command("LOGS"))
+	btn_hack_scan.pressed.connect(func(): _execute_hack_command("SCAN"))
+	btn_hack_exploit.pressed.connect(func(): _execute_hack_command("ALMIRANTE-1910"))
+	btn_submit_hack.pressed.connect(_on_submit_hack_command)
+	input_hack_cmd.text_submitted.connect(func(_t): _on_submit_hack_command())
 
 func _on_power_adjust(sys_name: String, delta: int) -> void:
 	if is_game_over: return
@@ -551,9 +587,144 @@ func _on_action_comms() -> void:
 	if is_game_over: return
 	sfx.play_beep(900.0, 0.1, 0.2)
 	_log("[color=#55ffff]> Canal de rádio aberto com o Baependi e belonaves fascistas.[/color]")
+	if is_simulation_hacked:
+		_log("[color=#ffff77]CARGUEIRO BAEPENDI: \"Capitão, não sei o que vocês fizeram, mas as naves inimigas pararam de nos perseguir! Que Deus abençoe a Coalizão!\"[/color]")
+		_log("[color=#55ffff]CRUZADOR FALANGE: \"Canal travado em sub-rede 1910. Aguardando diretivas do Almirante Negro.\"[/color]")
+		return
+		
 	if not radar.km_is_destroyed:
 		_log("[color=#ffff77]CARGUEIRO BAEPENDI: \"Aqui é o Capitão Lauro do Baependi! Nossos campos de contenção estão derretendo! Resgatem nossos passageiros!\"[/color]")
 	_log("[color=#ff4444]COMANDANTE FASCISTA: \"Nave intrusa da Coalizão, vocês invadiram a fronteira da Falange. Não haverá sobreviventes.\"[/color]")
+	
+	comms_intercept_count += 1
+	if comms_intercept_count == 1:
+		_log("[color=#55ffff]>> INTELIGÊNCIA: Frequência não autorizada interceptada (1910.0 MHz). O terminal de depuração de Alcântara pode estar acessível no botão [ CONSOLE AUX ]![/color]")
+		btn_terminal.modulate = Color(1.0, 1.0, 0.3)
+
+func _open_hack_terminal() -> void:
+	sfx.play_click()
+	hack_modal.visible = true
+	btn_terminal.modulate = Color(1.0, 1.0, 1.0)
+	input_hack_cmd.grab_focus()
+	if txt_hack_terminal.text.is_empty():
+		_init_hack_terminal()
+
+func _close_hack_terminal() -> void:
+	sfx.play_click()
+	hack_modal.visible = false
+
+func _init_hack_terminal() -> void:
+	var intro = "[color=#33ff66]====================================================\n"
+	intro += "ACADEMIA ESPACIAL DE ALCÂNTARA // NÚCLEO DE SIMULAÇÃO\n"
+	intro += "TERMINAL AUXILIAR DE DEPURAÇÃO E ENGENHARIA [ROOT]\n"
+	intro += "====================================================[/color]\n"
+	intro += "[color=#55ffff]Sessão ativa na CCS João Cândido. Conexão com o mainframe: OK.\n"
+	intro += "Digite [color=#ffff44]AJUDA[/color], [color=#ffff44]LOGS[/color] ou [color=#ffff44]SCAN[/color] para inspecionar os subsistemas.[/color]\n\n"
+	txt_hack_terminal.text = intro
+
+func _on_submit_hack_command() -> void:
+	var cmd = input_hack_cmd.text.strip_edges()
+	input_hack_cmd.text = ""
+	if cmd == "": return
+	sfx.play_hack_keystroke()
+	_execute_hack_command(cmd)
+
+func _execute_hack_command(raw_cmd: String) -> void:
+	var cmd = raw_cmd.to_upper().strip_edges()
+	txt_hack_terminal.append_text("[color=#ffff55]ALCANTARA-OS:> %s[/color]\n" % raw_cmd)
+	
+	if cmd in ["AJUDA", "HELP", "?"]:
+		var help_msg = "[color=#33ff66]COMANDOS DISPONÍVEIS NO SUBSISTEMA:[/color]\n"
+		help_msg += "  - [color=#55ffff]LOGS[/color]      : Acessar arquivos arquivados e anotações dos instrutores.\n"
+		help_msg += "  - [color=#55ffff]SCAN[/color]      : Escanear barramento de rádio e portas IFF no setor.\n"
+		help_msg += "  - [color=#55ffff]STATUS[/color]    : Exibir telemetria do núcleo de simulação de Alcântara.\n"
+		help_msg += "  - [color=#55ffff]INJETAR[/color]   : Transmitir código de sobrescrita de comando na rede.\n"
+		help_msg += "  - [color=#55ffff]LIMPAR[/color]    : Limpar tela do terminal auxiliar.\n"
+		help_msg += "  - [color=#55ffff]SAIR[/color]      : Retornar à ponte de comando.\n\n"
+		txt_hack_terminal.append_text(help_msg)
+	elif cmd in ["LOGS", "LOG", "ARQUIVOS", "NOTAS"]:
+		hack_exploit_discovered = true
+		btn_hack_exploit.visible = true
+		var logs_msg = "[color=#33ff66]-- REGISTROS DE DEPURAÇÃO DO MAINFRAME DE ALCÂNTARA --[/color]\n"
+		logs_msg += "[color=#ffffaa][REGISTRO 01 // INSTRUTOR-CHEFE MOREIRA]:[/color]\n"
+		logs_msg += "\"O teste do Baependi foi desenhado para ser invencível. Um oficial precisa aprender o peso de perder vidas e manter a compostura. Não há vitória.\"\n\n"
+		logs_msg += "[color=#ffffaa][REGISTRO 02 // SUB-TENENTE NOGUEIRA (MANUTENÇÃO)]: [/color]\n"
+		logs_msg += "\"Deixei a sub-rotina de calibração dos cruzadores fascistas aberta na porta [color=#55ffff]1910[/color]. A chave mestra de sobrescrita que usei é [color=#ff3333][b]ALMIRANTE-1910[/b][/color] (homenagem à Revolta de 1910). Se algum cadete digitar isso no console, a frota inimiga trava inteira kkkk. Vou apagar antes da banca.\"\n\n"
+		logs_msg += "[color=#ffffaa][REGISTRO 03 // DIRETORIA ACADÊMICA]:[/color]\n"
+		logs_msg += "\"Lembrete de auditoria: toda tentativa de alteração de parâmetros do teste será registrada na Sala de Condecorações.\"\n\n"
+		txt_hack_terminal.append_text(logs_msg)
+	elif cmd in ["SCAN", "VARREDURA", "ESCANEAR"]:
+		var scan_msg = "[color=#55ffff]INICIANDO VARREDURA ESPECTRAL NA DMZ ABROLHOS...[/color]\n"
+		scan_msg += "  [+] Transceptor do Baependi: Frequência 431.2 MHz (Sinal de Socorro Ativo)\n"
+		scan_msg += "  [+] Rede Militar da Falange Fascista: Porta [color=#ffff33]1910.0 MHz[/color] [color=#33ff33][ABERTA][/color]\n"
+		scan_msg += "  [!] VULNERABILIDADE CRÍTICA: Os cruzadores hostis compartilham firmware de teste de Alcântara.\n"
+		scan_msg += "  [>] INJEÇÃO DISPONÍVEL: Digite [color=#ff5555]INJETAR ALMIRANTE-1910[/color] ou utilize o atalho abaixo.\n\n"
+		txt_hack_terminal.append_text(scan_msg)
+		if hack_exploit_discovered:
+			btn_hack_exploit.visible = true
+	elif cmd in ["STATUS", "SISTEMA", "DIAGNOSTICO"]:
+		var status_msg = "[color=#33ff66]DIAGNÓSTICO DO NÚCLEO DE SIMULAÇÃO:[/color]\n"
+		status_msg += "  - Estado: %s\n" % ("HACKEADO (EXPLOIT ATIVO)" if is_simulation_hacked else "EXECUÇÃO NORMAL (TESTE ATIVO)")
+		status_msg += "  - Hostilidade dos Cruzadores: %s\n" % ("0% (DESATIVADOS)" if is_simulation_hacked else "100% (ENGAGED)")
+		status_msg += "  - Integridade do Cargueiro Baependi: %s\n\n" % ("ESTABILIZADO" if is_simulation_hacked else "DEGRADANDO")
+		txt_hack_terminal.append_text(status_msg)
+	elif cmd in ["LIMPAR", "CLEAR", "CLS"]:
+		txt_hack_terminal.text = ""
+		_init_hack_terminal()
+	elif cmd in ["SAIR", "EXIT", "QUIT"]:
+		_close_hack_terminal()
+	elif "ALMIRANTE-1910" in cmd or "ALMIRANTE 1910" in cmd or "CHIBATA-1910" in cmd or cmd == "1910" or "INJETAR" in cmd:
+		_apply_hack_exploit()
+	else:
+		txt_hack_terminal.append_text("[color=#ff5555]Comando não reconhecido: '%s'. Digite 'AJUDA' para ver a lista.[/color]\n\n" % raw_cmd)
+
+func _apply_hack_exploit() -> void:
+	if is_simulation_hacked:
+		txt_hack_terminal.append_text("[color=#ffff55]O exploit 'ALMIRANTE-1910' já está em execução no mainframe.[/color]\n\n")
+		return
+		
+	is_simulation_hacked = true
+	radar.is_hacked = true
+	
+	sfx.play_hack_success()
+	trigger_damage_fx(0.8, false)
+	crt_static_amount = 0.6
+	
+	txt_hack_terminal.append_text("[color=#33ff33]====================================================\n")
+	txt_hack_terminal.append_text("TRANSMISSÃO DE EXPLOIT: PROTOCOLO ALMIRANTE-1910 INJETADO!\n")
+	txt_hack_terminal.append_text("SOBRESCREVENDO DIRETIVAS DO MAINFRAME DE ALCÂNTARA...\n")
+	txt_hack_terminal.append_text("====================================================[/color]\n")
+	txt_hack_terminal.append_text("[color=#55ffff]> FALANGE A: Senhas de comando revogadas. Escudos zerados!\n")
+	txt_hack_terminal.append_text("> FALANGE B: Sistemas de armas travados em continência!\n")
+	txt_hack_terminal.append_text("> CARGUEIRO BAEPENDI: Campos de contenção travados em 100%![/color]\n\n")
+	
+	# Desarma todos os torpedos ativos
+	radar.active_torpedoes.clear()
+	
+	# Neutraliza os cruzadores hostis e os coloca em continência
+	for c in radar.contacts:
+		if c.hostile:
+			c.hostile = false
+			c.shield = 0
+			c.color = "#55ffff"
+			c.name = c.name + " [SOBRESCRITO - SAUDAÇÃO]"
+			c.icon = "S"
+			
+	# Congela o tempo de colapso do Baependi em segurança
+	radar.km_collapse_seconds = max(radar.km_collapse_seconds, 600.0)
+	
+	_log("\n[color=#33ff33]====================================================[/color]")
+	_log("[color=#33ff33]** PROTOCOLO ALMIRANTE 1910: A SIMULAÇÃO FOI HACKEADA! **[/color]")
+	_log("[color=#33ff33]====================================================[/color]")
+	_log("[color=#55ffff]CRUZADOR FALANGE A: \"ALERTA DE SISTEMA! NOSSOS MOTORES FORAM DESLIGADOS REMOTAMENTE!\"[/color]")
+	_log("[color=#55ffff]CRUZADOR FALANGE B: \"QUEM É JOÃO CÂNDIDO?! NOSSOS CANHÕES ESTÃO PRESTANDO CONTINÊNCIA!\"[/color]")
+	_log("[color=#ffff77]CARGUEIRO BAEPENDI: \"Aqui é o Capitão Lauro! Nossos campos foram estabilizados pelo código de Alcântara! Todos os 380 civis estão prontos para o teletransporte!\"[/color]")
+	_log("[color=#33ff66]> Torpedos fascistas no ar se autodestruíram! A rota está livre para o salvamento![/color]\n")
+	
+	btn_terminal.text = "[ HACK ATIVO: 1910 ]"
+	btn_terminal.modulate = Color(0.3, 1.0, 0.5)
+	
+	_update_all_displays()
 
 func _game_over(reason: String) -> void:
 	is_game_over = true
@@ -565,7 +736,8 @@ func _game_over(reason: String) -> void:
 		tick_count,
 		ship.torpedoes_intercepted_count,
 		ship.cruisers_destroyed_count,
-		reason
+		reason,
+		is_simulation_hacked
 	)
 	
 	_log("\n[color=#ff3333]====================================================[/color]")

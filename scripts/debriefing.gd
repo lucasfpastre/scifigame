@@ -39,6 +39,8 @@ func _render_debriefing() -> void:
 		text += "   - [color=#ff4444]Baixas Fatais na UTI/Hospital: %d (-%d pts)[/color]\n" % [d.get("casualties", 0), d.get("pts_penalties", 0)]
 	if d.get("ethical_bonus", 0) > 0:
 		text += "   - [color=#ffff44]Bônus de Mérito Humanitário: +%d pts[/color]\n" % d.get("ethical_bonus", 0)
+	if d.get("is_hacked", false):
+		text += "   - [color=#55ffff]★ ANOMALIA DE CÓDIGO: Sobrescrita do Mainframe (Protocolo 1910) (+1500 pts)[/color]\n"
 		
 	text += "\n[color=#ffffff]2. ENFRENTAMENTO TÁTICO & COMBATE:[/color]\n"
 	text += "   - Torpedos Hostis Interceptados: %d (+%d pts)\n" % [d.get("torpedoes_intercepted", 0), d.get("torpedoes_intercepted", 0) * 30]
@@ -70,8 +72,9 @@ func _on_scores_pressed() -> void:
 	else:
 		var pos = 1
 		for entry in GameState.high_scores:
-			text += "[color=#33ff66]#%02d[/color] | [color=#ffff44]%d PTS[/color] | [color=#ffffff]%s[/color] | Civis: %d\n" % [
-				pos, entry.get("score", 0), entry.get("rank", "Oficial"), entry.get("civilians", 0)
+			var hack_tag = " [color=#55ffff][HACK][/color]" if entry.get("hacked", false) else ""
+			text += "[color=#33ff66]#%02d[/color] | [color=#ffff44]%d PTS[/color]%s | [color=#ffffff]%s[/color] | Civis: %d\n" % [
+				pos, entry.get("score", 0), hack_tag, entry.get("rank", "Oficial"), entry.get("civilians", 0)
 			]
 			pos += 1
 	text += "\n[color=#33ff66]Total de Simulações Realizadas: %d[/color]\n" % GameState.total_runs

@@ -391,6 +391,107 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "[ TRANSMITIR ]"
 
+[node name="BtnTerminal" type="Button" parent="Margin/Layout/ActionBar/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[ CONSOLE AUX ]"
+
+[node name="HackModal" type="ColorRect" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.01, 0.035, 0.015, 0.95)
+
+[node name="Center" type="CenterContainer" parent="HackModal"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="HackModal/Center"]
+custom_minimum_size = Vector2(920, 520)
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="HackModal/Center/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HeaderHBox" type="HBoxContainer" parent="HackModal/Center/Panel/VBox"]
+layout_mode = 2
+
+[node name="LblHackHeader" type="Label" parent="HackModal/Center/Panel/VBox/HeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[ ACADEMIA DE ALCÂNTARA // CONSOLE DE DEPURAÇÃO DO MAINFRAME ]"
+
+[node name="BtnCloseHack" type="Button" parent="HackModal/Center/Panel/VBox/HeaderHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "[ X // FECHAR ]"
+
+[node name="TxtHackTerminal" type="RichTextLabel" parent="HackModal/Center/Panel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+scroll_following = true
+
+[node name="HBoxShortcuts" type="HBoxContainer" parent="HackModal/Center/Panel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BtnHackHelp" type="Button" parent="HackModal/Center/Panel/VBox/HBoxShortcuts"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[ AJUDA ]"
+
+[node name="BtnHackLogs" type="Button" parent="HackModal/Center/Panel/VBox/HBoxShortcuts"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[ LOGS ACADEMIA ]"
+
+[node name="BtnHackScan" type="Button" parent="HackModal/Center/Panel/VBox/HBoxShortcuts"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[ ESCANEAR REDE ]"
+
+[node name="BtnHackExploit" type="Button" parent="HackModal/Center/Panel/VBox/HBoxShortcuts"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[ INJETAR ALMIRANTE-1910 ]"
+
+[node name="InputHBox" type="HBoxContainer" parent="HackModal/Center/Panel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LblPrompt" type="Label" parent="HackModal/Center/Panel/VBox/InputHBox"]
+layout_mode = 2
+text = "ALCANTARA-OS:> "
+
+[node name="InputHackCmd" type="LineEdit" parent="HackModal/Center/Panel/VBox/InputHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Digite um comando (ex: AJUDA, LOGS, SCAN, ou código de acesso)..."
+
+[node name="BtnSubmitHack" type="Button" parent="HackModal/Center/Panel/VBox/InputHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "[ EXECUTAR ]"
+
 [node name="CRTOverlay" type="ColorRect" parent="."]
 unique_name_in_owner = true
 material = SubResource("ShaderMaterial_crt")

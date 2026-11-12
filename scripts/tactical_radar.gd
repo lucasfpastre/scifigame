@@ -21,6 +21,7 @@ var ambush_ticks: int = 0
 var next_event_cooldown: int = 5
 var ion_storm_ticks: int = 0
 var bonus_beam_civilians: int = 0
+var is_hacked: bool = false
 
 func _init() -> void:
 	reset_simulation_sector()
@@ -28,6 +29,7 @@ func _init() -> void:
 func reset_simulation_sector() -> void:
 	contacts.clear()
 	active_torpedoes.clear()
+	is_hacked = false
 	km_collapse_seconds = 180.0
 	km_is_destroyed = false
 	ambush_stage = 0
@@ -90,6 +92,9 @@ func update_tactical_tick(player_engines_eff: float, player_heading: int, is_tra
 		"ambush_event": false
 	}
 	sweep_phase = (sweep_phase + 1) % 4
+	
+	if is_hacked:
+		return tick_result
 	
 	# 1. Controle da Emboscada Escalonada
 	var bae_contact = _get_contact("BAE-01")

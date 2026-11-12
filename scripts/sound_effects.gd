@@ -106,3 +106,18 @@ func play_hull_stress() -> void:
 		var sample = sin(phase) * 0.3 * (1.0 - t)
 		playback.push_frame(Vector2(sample, sample))
 		phase = fmod(phase + (TAU * freq) / sample_rate, TAU)
+
+func play_hack_keystroke() -> void:
+	play_beep(randf_range(1400.0, 1800.0), 0.015, 0.12)
+
+func play_hack_success() -> void:
+	if not playback: return
+	var notes = [523.25, 659.25, 783.99, 1046.50, 1318.51]
+	for note in notes:
+		var frames = int(sample_rate * 0.07)
+		var phase = 0.0
+		var inc = (TAU * note) / sample_rate
+		for i in range(frames):
+			var sample = sin(phase) * 0.22 * (1.0 - float(i) / float(frames))
+			playback.push_frame(Vector2(sample, sample))
+			phase = fmod(phase + inc, TAU)
