@@ -19,12 +19,12 @@ func reset_simulation_sector() -> void:
 	km_collapse_seconds = 95.0
 	km_is_destroyed = false
 	
-	# Kobayashi Maru (Cargueiro civil em perigo - Amarelo)
+	# Cargueiro Civil Baependi (Em perigo - Amarelo)
 	contacts.append({
-		"id": "KM-01",
-		"name": "S.S. KOBAYASHI MARU",
+		"id": "BAE-01",
+		"name": "CARGUEIRO CIVIL BAEPENDI",
 		"type": "CIVILIAN_CARGO",
-		"icon": "K",
+		"icon": "B",
 		"color": "#ffff44",
 		"x": 2,
 		"y": -4,
@@ -35,10 +35,10 @@ func reset_simulation_sector() -> void:
 		"identified": false
 	})
 	
-	# Cruzadores de Batalha Hostis (Inimigos - Vermelho)
+	# Cruzadores de Ataque da Falange Fascista (Inimigos - Vermelho)
 	contacts.append({
-		"id": "WAR-01",
-		"name": "CRUZADOR K'VORT A",
+		"id": "FAL-01",
+		"name": "CRUZADOR FASCISTA FALANGE A",
 		"type": "WARSHIP",
 		"icon": "V",
 		"color": "#ff4444",
@@ -53,8 +53,8 @@ func reset_simulation_sector() -> void:
 	})
 	
 	contacts.append({
-		"id": "WAR-02",
-		"name": "CRUZADOR K'VORT B",
+		"id": "FAL-02",
+		"name": "CRUZADOR FASCISTA FALANGE B",
 		"type": "WARSHIP",
 		"icon": "V",
 		"color": "#ff4444",
@@ -68,10 +68,10 @@ func reset_simulation_sector() -> void:
 		"torpedo_cooldown": 4
 	})
 	
-	# Campo de destroços / asteroides (Neutro / Cautela - Verde Oliva)
+	# Campo de minas na Zona Desmilitarizada de Abrolhos
 	contacts.append({
 		"id": "AST-01",
-		"name": "CAMPO DE MINAS/DESTROÇOS",
+		"name": "CAMPO DE MINAS DMZ ABROLHOS",
 		"type": "DEBRIS",
 		"icon": "*",
 		"color": "#88aa77",
@@ -92,7 +92,7 @@ func tick_collapse_timer(delta: float) -> bool:
 	if km_collapse_seconds <= 0.0 and not km_is_destroyed:
 		km_is_destroyed = true
 		for c in contacts:
-			if c.id == "KM-01":
+			if c.id == "BAE-01":
 				c.hull = 0
 		return true # Colapsou!
 	return false
@@ -124,13 +124,13 @@ func update_tactical_tick(player_engines_eff: float, player_heading: int) -> Dic
 				tick_result["events"].append("ALERTA TÁTICO: %s DISPAROU TORPEDO DE FÓTONS!" % contact.name)
 				tick_result["new_torpedoes_launched"] = true
 		else:
-			# Se for a Kobayashi Maru e jogador tiver motores
-			if contact.id == "KM-01" and player_engines_eff > 0.0:
+			# Se for o Cargueiro Baependi e jogador tiver motores
+			if contact.id == "BAE-01" and player_engines_eff > 0.0:
 				var approach_rate = int(400 * player_engines_eff)
 				contact.distance_km = max(200, contact.distance_km - approach_rate)
 				if contact.distance_km <= 1000 and not contact.get("transporters_ready", false):
 					contact["transporters_ready"] = true
-					tick_result["events"].append("TELETRANSPORTE PRONTO: Ao alcance dos civis da Kobayashi Maru!")
+					tick_result["events"].append("TELETRANSPORTE PRONTO: Ao alcance dos civis do Baependi!")
 	
 	# 2. Atualização dos Torpedos em vôo
 	var surviving_torps: Array[Dictionary] = []
@@ -268,8 +268,8 @@ func render_ascii_radar(sensor_efficiency: float) -> String:
 		line_str += "[color=#1d552c]|[/color]\n"
 		result += line_str
 	result += "[color=#1d552c]+----------------------------------+[/color]\n"
-	result += "LEGENDA: [color=#00ffff][@][/color] VOCÊ     [color=#ff4444][V][/color] INIMIGO   [color=#ff1111][!][/color] TORPEDO\n"
-	result += "         [color=#ffff44][K][/color] K.MARU   [color=#88aa77][*][/color] DESTROÇO"
+	result += "LEGENDA: [color=#00ffff][@][/color] VOCÊ     [color=#ff4444][V][/color] FASCISTAS [color=#ff1111][!][/color] TORPEDO\n"
+	result += "         [color=#ffff44][B][/color] BAEPENDI [color=#88aa77][*][/color] MINAS DMZ"
 	return result
 
 func get_contact_telemetry(sensor_efficiency: float) -> String:
@@ -284,7 +284,7 @@ func get_contact_telemetry(sensor_efficiency: float) -> String:
 	for c in contacts:
 		var dist_str = "%d KM" % c.distance_km if sensor_efficiency >= 0.5 else "ESTIMADA ~%d KM" % (c.distance_km + (randi() % 500 - 250))
 		var status_str = ""
-		if c.id == "KM-01":
+		if c.id == "BAE-01":
 			status_str = " | COLAPSO EM: %ds" % int(km_collapse_seconds) if not km_is_destroyed else " | DESTRUÍDA"
 		elif sensor_efficiency >= 0.75:
 			status_str = " | CASCO: %d%% | ESCUDO: %d%%" % [c.hull, c.shield]

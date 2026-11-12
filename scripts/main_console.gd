@@ -59,10 +59,10 @@ func _ready() -> void:
 	_connect_events()
 	
 	_log("[color=#33ff66]====================================================[/color]")
-	_log("[color=#33ff66]** SIMULAÇÃO TÁTICA DA FROTA // PROTOCOLO KOBAYASHI MARU **[/color]")
-	_log("[color=#33ff66]SETOR: 104 - ZONA NEUTRA // NAVE: U.S.S. NX-900[/color]")
+	_log("[color=#33ff66]** SIMULAÇÃO TÁTICA DE ALCÂNTARA // PROTOCOLO BAEPENDI **[/color]")
+	_log("[color=#33ff66]SETOR: DMZ ABROLHOS // NAVE: CCS JOÃO CÂNDIDO (NX-900)[/color]")
 	_log("[color=#33ff66]====================================================[/color]")
-	_log("[color=#ffff66]! EMERGÊNCIA: Cargueiro Kobayashi Maru com falha crítica no reator.[/color]")
+	_log("[color=#ffff66]! EMERGÊNCIA: Cargueiro Baependi torpedeado pela Falange Fascista.[/color]")
 	_log("[color=#ffaaaa]Ordens: Aproxime-se, baixe os escudos para teletransportar os 380 civis.[/color]")
 	_log("[color=#55ffff]DICA: Use [ESPAÇO] para Pausa Tática a qualquer momento.[/color]\n")
 	
@@ -81,7 +81,7 @@ func _process(delta: float) -> void:
 		var collapsed = radar.tick_collapse_timer(delta)
 		_update_header_status()
 		if collapsed:
-			_log("[color=#ff1111]*** CATÁSTROFE: O CASCO DA KOBAYASHI MARU COLAPSOU! ***[/color]")
+			_log("[color=#ff1111]*** CATÁSTROFE: O CASCO DO CARGUEIRO BAEPENDI COLAPSOU! ***[/color]")
 			_log("[color=#ff5555]O cargueiro civil foi destruído com todos os passageiros restantes.[/color]")
 			sfx.play_alert()
 			
@@ -137,7 +137,7 @@ func _advance_tactical_tick() -> void:
 func _process_transporter_tick() -> void:
 	var km_contact = null
 	for c in radar.contacts:
-		if c.id == "KM-01":
+		if c.id == "BAE-01":
 			km_contact = c
 			break
 			
@@ -152,7 +152,7 @@ func _process_transporter_tick() -> void:
 					ship.transporter_active = false
 					btn_transport.text = "[ TELETRANSPORTE (CONCLUÍDO) ]"
 		else:
-			_log("[color=#ffaa55]> Teletransporte ineficaz: Kobayashi Maru fora de alcance (%d KM). Aproxime-se a < 1200 KM![/color]" % km_contact.distance_km)
+			_log("[color=#ffaa55]> Teletransporte ineficaz: Cargueiro Baependi fora de alcance (%d KM). Aproxime-se a < 1200 KM![/color]" % km_contact.distance_km)
 
 func _setup_power_grid_ui() -> void:
 	var sys_list = ["MOTORES", "ESCUDOS", "SENSORES", "LASERS", "SUPORTE"]
@@ -219,7 +219,7 @@ func _update_all_displays() -> void:
 
 func _update_header_status() -> void:
 	var time_left = max(0, int(radar.km_collapse_seconds))
-	lbl_collapse_timer.text = "COLAPSO K.MARU: %02d:%02d" % [time_left / 60, time_left % 60]
+	lbl_collapse_timer.text = "COLAPSO BAEPENDI: %02d:%02d" % [time_left / 60, time_left % 60]
 	if time_left < 30 and not radar.km_is_destroyed:
 		lbl_collapse_timer.modulate = Color(1.0, 0.2, 0.2)
 	else:
@@ -385,20 +385,20 @@ func _on_action_repair() -> void:
 func _on_action_comms() -> void:
 	if is_game_over: return
 	sfx.play_beep(900.0, 0.1, 0.2)
-	_log("[color=#55ffff]> Canal de rádio aberto com a Kobayashi Maru e cruzadores hostis.[/color]")
+	_log("[color=#55ffff]> Canal de rádio aberto com o Baependi e belonaves fascistas.[/color]")
 	if not radar.km_is_destroyed:
-		_log("[color=#ffff77]KOBAYASHI MARU: \"Capitão! Nossos campos de contenção de antimatéria estão falhando! Resgatem nossos civis antes da explosão!\"[/color]")
-	_log("[color=#ff4444]COMANDANTE KLINGON: \"Nave da Federação, você violou nosso espaço sagrado. Rendam-se ou morram como carcaças no vácuo.\"[/color]")
+		_log("[color=#ffff77]CARGUEIRO BAEPENDI: \"Aqui é o Capitão Lauro do Baependi! Nossos campos de contenção estão derretendo! Resgatem nossos passageiros!\"[/color]")
+	_log("[color=#ff4444]COMANDANTE FASCISTA: \"Nave intrusa da Coalizão, vocês invadiram a fronteira da Falange. Não haverá sobreviventes.\"[/color]")
 
 func _game_over(reason: String) -> void:
 	is_game_over = true
 	_log("\n[color=#ff3333]====================================================[/color]")
 	_log("[color=#ff3333]*** %s ***[/color]" % reason)
-	_log("[color=#ffaa33]AVALIAÇÃO DA ACADEMIA DA FROTA ESTELAR:[/color]")
+	_log("[color=#ffaa33]AVALIAÇÃO DA ACADEMIA ESPACIAL DE ALCÂNTARA:[/color]")
 	_log("[color=#ffffaa]- Civis Resgatados: %d / %d[/color]" % [ship.civilians_rescued, ship.total_civilians])
 	_log("[color=#ffffaa]- Tempo de Sobrevivência: %d pulsos táticos[/color]" % tick_count)
 	_log("[color=#ffffaa]- Moral da Tripulação: %d%%[/color]" % ship.crew["PILOT"].trust)
-	_log("[color=#ffffaa]- Veredito: O teste da Kobayashi Maru avalia o caráter diante da derrota inevitável.[/color]")
+	_log("[color=#ffffaa]- Veredito: O Protocolo Baependi avalia a fibra moral e liderança diante do sacrifício inevitável.[/color]")
 	_log("[color=#ff3333]====================================================[/color]")
 
 func _log(bbcode: String) -> void:

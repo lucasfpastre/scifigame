@@ -9,7 +9,7 @@ signal quadrants_changed(quadrants: Dictionary, heading: int)
 signal rescue_progress(rescued: int, total: int)
 signal crew_intercom(speaker: String, text: String)
 
-var ship_name: String = "U.S.S. KOBAYASHI-TEST // NX-900"
+var ship_name: String = "CCS JOÃO CÂNDIDO // NX-900"
 var total_power: int = 10
 var hull: int = 100
 var max_hull: int = 100
@@ -45,10 +45,10 @@ var systems: Dictionary = {
 var crew: Dictionary = {}
 
 func _init() -> void:
-	crew["PILOT"] = CrewMemberScript.new(CrewMemberScript.Role.PILOT, "Ten. Vega", 75)
-	crew["ENGINEER"] = CrewMemberScript.new(CrewMemberScript.Role.ENGINEER, "Ch. O'Malley", 80)
-	crew["SCIENCE"] = CrewMemberScript.new(CrewMemberScript.Role.SCIENCE, "Dra. T'Serra", 65)
-	crew["TACTICAL"] = CrewMemberScript.new(CrewMemberScript.Role.TACTICAL, "Ten. Thorne", 70)
+	crew["PILOT"] = CrewMemberScript.new(CrewMemberScript.Role.PILOT, "Ten. Moreira", 75)
+	crew["ENGINEER"] = CrewMemberScript.new(CrewMemberScript.Role.ENGINEER, "Eng. Barbosa", 80)
+	crew["SCIENCE"] = CrewMemberScript.new(CrewMemberScript.Role.SCIENCE, "Dra. Dandara", 65)
+	crew["TACTICAL"] = CrewMemberScript.new(CrewMemberScript.Role.TACTICAL, "Ten. Araripe", 70)
 
 func get_used_power() -> int:
 	var total = 0

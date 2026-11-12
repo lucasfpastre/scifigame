@@ -18,16 +18,16 @@ func _init(p_role: Role, p_name: String, p_trust: int = 65) -> void:
 	match role:
 		Role.PILOT:
 			role_title = "PILOTO / NAVEGAÇÃO"
-			avatar_ascii = "[LT. VEGA - NAV]"
+			avatar_ascii = "[TEN. MOREIRA - NAV]"
 		Role.ENGINEER:
 			role_title = "ENGENHARIA-CHEFE"
-			avatar_ascii = "[CHIEF O'MALLEY]"
+			avatar_ascii = "[ENG. BARBOSA]"
 		Role.SCIENCE:
 			role_title = "CIÊNCIAS / SENSORES"
-			avatar_ascii = "[DRA. T'SERRA]"
+			avatar_ascii = "[DRA. DANDARA]"
 		Role.TACTICAL:
-			role_title = "TÁTICO / ARMAMENTO"
-			avatar_ascii = "[TEN. THORNE]"
+			role_title = "TÁTICO / DEFESA"
+			avatar_ascii = "[TEN. ARARIPE]"
 
 # Retorna a eficiência bônus baseada em confiança e estresse (0.7 a 1.5)
 func get_efficiency_factor() -> float:

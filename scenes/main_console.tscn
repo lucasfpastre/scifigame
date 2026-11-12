@@ -59,13 +59,13 @@ theme_override_constants/separation = 14
 
 [node name="LblShip" type="Label" parent="Margin/Layout/HeaderPanel/HBox"]
 layout_mode = 2
-text = "[ NX-900 KOBAYASHI SIM ]"
+text = "[ CCS JOÃO CÂNDIDO // NX-900 ]"
 
 [node name="LblCollapseTimer" type="Label" parent="Margin/Layout/HeaderPanel/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "COLAPSO K.MARU: 01:35"
+text = "COLAPSO BAEPENDI: 01:35"
 
 [node name="LblRescued" type="Label" parent="Margin/Layout/HeaderPanel/HBox"]
 unique_name_in_owner = true
