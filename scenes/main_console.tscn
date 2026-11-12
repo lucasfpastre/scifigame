@@ -9,8 +9,8 @@ shader = ExtResource("3_shader")
 shader_parameter/phosphor_color = Color(0.25, 1, 0.45, 1)
 shader_parameter/scanline_count = 360.0
 shader_parameter/scanline_intensity = 0.2
-shader_parameter/curvature = 0.025
-shader_parameter/vignette_intensity = 0.9
+shader_parameter/curvature = 0.016
+shader_parameter/vignette_intensity = 0.65
 shader_parameter/glow_intensity = 0.15
 shader_parameter/flicker_speed = 24.0
 shader_parameter/flicker_intensity = 0.015
@@ -41,10 +41,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 12
 
 [node name="Layout" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
@@ -55,17 +55,17 @@ layout_mode = 2
 
 [node name="HBox" type="HBoxContainer" parent="Margin/Layout/HeaderPanel"]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 10
 
 [node name="LblShip" type="Label" parent="Margin/Layout/HeaderPanel/HBox"]
 layout_mode = 2
-text = "[ CCS JOÃO CÂNDIDO // NX-900 ]"
+text = "[ JOÃO CÂNDIDO // NX-900 ]"
 
 [node name="LblCollapseTimer" type="Label" parent="Margin/Layout/HeaderPanel/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "COLAPSO BAEPENDI: 01:35"
+text = "COLAPSO: 01:35"
 
 [node name="LblRescued" type="Label" parent="Margin/Layout/HeaderPanel/HBox"]
 unique_name_in_owner = true
@@ -85,7 +85,7 @@ text = "CASCO: 100%"
 [node name="LblAlert" type="Label" parent="Margin/Layout/HeaderPanel/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "[ COND. NORMAL ]"
+text = "[ NORMAL ]"
 
 [node name="MainColumns" type="HBoxContainer" parent="Margin/Layout"]
 layout_mode = 2
@@ -355,12 +355,12 @@ layout_mode = 2
 text = "+"
 
 [node name="ActionBar" type="PanelContainer" parent="Margin/Layout"]
-custom_minimum_size = Vector2(0, 56)
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 
 [node name="HBox" type="HBoxContainer" parent="Margin/Layout/ActionBar"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 4
 
 [node name="BtnPause" type="Button" parent="Margin/Layout/ActionBar/HBox"]
 unique_name_in_owner = true
@@ -370,7 +370,7 @@ text = "[ || PAUSA ]"
 
 [node name="BtnSpeed" type="Button" parent="Margin/Layout/ActionBar/HBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(85, 0)
+custom_minimum_size = Vector2(68, 0)
 layout_mode = 2
 text = "[ 1.0x ]"
 
@@ -378,7 +378,7 @@ text = "[ 1.0x ]"
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "[ TELETRANSPORTE (T) ]"
+text = "[ RESGATE (T) ]"
 
 [node name="BtnFire" type="Button" parent="Margin/Layout/ActionBar/HBox"]
 unique_name_in_owner = true
@@ -390,31 +390,31 @@ text = "[ LASERS (F) ]"
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "[ ISCAS/CHAFF (C) ]"
+text = "[ CHAFF (C) ]"
 
 [node name="BtnRepair" type="Button" parent="Margin/Layout/ActionBar/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "[ REPARAR (R) ]"
+text = "[ REPARO (R) ]"
 
 [node name="BtnComms" type="Button" parent="Margin/Layout/ActionBar/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "[ TRANSMITIR (M) ]"
+text = "[ COMMS (M) ]"
 
 [node name="BtnWarp" type="Button" parent="Margin/Layout/ActionBar/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "[ EVASÃO / DOBRA (V) ]"
+text = "[ DOBRA (V) ]"
 
 [node name="BtnTerminal" type="Button" parent="Margin/Layout/ActionBar/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "[ CONSOLE AUX (TAB) ]"
+text = "[ HACK (TAB) ]"
 
 [node name="HackModal" type="ColorRect" parent="."]
 unique_name_in_owner = true

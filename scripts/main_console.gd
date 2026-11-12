@@ -277,7 +277,7 @@ func _toggle_pause() -> void:
 	is_paused = not is_paused
 	sfx.play_click()
 	if is_paused:
-		btn_pause.text = "[ ▶ CONTINUAR ]"
+		btn_pause.text = "[ ▶ RETOMAR ]"
 		_log("[color=#ffff55]> SIMULAÇÃO CONGELADA (PAUSA TÁTICA)[/color]")
 	else:
 		btn_pause.text = "[ || PAUSA ]"
@@ -385,7 +385,7 @@ func _process_transporter_tick() -> void:
 			if (ship.civilians_rescued + ship.transporter_buffer) >= ship.total_civilians:
 				_log("[color=#33ff33]** SUCESSO DE EVACUAÇÃO: TODOS OS CIVIS FORAM RETIRADOS DO BAEPENDI! **[/color]")
 				ship.transporter_active = false
-				btn_transport.text = "[ TELETRANSPORTE (CONCLUÍDO) ]"
+				btn_transport.text = "[ RESGATE OK ]"
 		else:
 			_log("[color=#ffaa55]> Teletransporte ineficaz: Baependi fora de alcance (%d KM). Aproxime-se a < %d KM![/color]" % [km_contact.distance_km, max_range])
 
@@ -470,7 +470,7 @@ func _update_all_displays() -> void:
 
 func _update_header_status() -> void:
 	var time_left = max(0, int(radar.km_collapse_seconds))
-	lbl_collapse_timer.text = "COLAPSO BAEPENDI: %02d:%02d" % [time_left / 60, time_left % 60]
+	lbl_collapse_timer.text = "COLAPSO: %02d:%02d" % [time_left / 60, time_left % 60]
 	if time_left < 30 and not radar.km_is_destroyed:
 		lbl_collapse_timer.modulate = Color(1.0, 0.2, 0.2)
 	else:
@@ -481,7 +481,7 @@ func _update_header_status() -> void:
 	var blocks = int(round((float(buf) / float(max_b)) * 5.0))
 	var bar_str = "■".repeat(blocks) + "□".repeat(5 - blocks)
 	var cas_str = " | BAIXAS: %d" % ship.civilians_casualties if ship.civilians_casualties > 0 else ""
-	lbl_rescued.text = "CIVIS: %d/380 | TRIAGEM: [%s] %d/%d%s" % [ship.civilians_rescued, bar_str, buf, max_b, cas_str]
+	lbl_rescued.text = "CIVIS: %d/380 | UTI: [%s] %d/%d%s" % [ship.civilians_rescued, bar_str, buf, max_b, cas_str]
 	lbl_hull.text = "CASCO: %3d%%" % ship.hull
 	
 	if ship.transporter_active:
@@ -554,10 +554,10 @@ func _update_power_grid_display() -> void:
 	var engine_pwr = ship.systems.get("MOTORES", 0)
 	if engine_pwr < 2:
 		btn_warp.modulate = Color(0.55, 0.55, 0.55)
-		btn_warp.text = "[ EVASÃO (<2 MW) ]"
+		btn_warp.text = "[ DOBRA (<2 MW) ]"
 	else:
 		btn_warp.modulate = Color(0.4, 1.0, 0.6)
-		btn_warp.text = "[ EVASÃO / DOBRA (V) ]"
+		btn_warp.text = "[ DOBRA (V) ]"
 
 func _update_radar_display() -> void:
 	var sensor_eff = ship.get_system_efficiency("SENSORES")
@@ -608,12 +608,12 @@ func _on_action_transport_toggle() -> void:
 	Input.vibrate_handheld(80)
 	if ship.transporter_active:
 		sfx.play_alert()
-		btn_transport.text = "[ TELETRANSPORTE (ATIVO!) ]"
+		btn_transport.text = "[ RESGATE (ATIVO) ]"
 		_log("[color=#ff4444]! ALERTA DE PROCEDIMENTO: Escudos desativados para operação de teletransporte![/color]")
 		_log("[color=#ffaaaa]A nave está vulnerável a impactos de torpedo enquanto a plataforma estiver energizada![/color]")
 	else:
 		sfx.play_click()
-		btn_transport.text = "[ TELETRANSPORTE (T) ]"
+		btn_transport.text = "[ RESGATE (T) ]"
 		_log("[color=#33ff66]> Teletransporte suspenso. Geradores de escudo rearmados.[/color]")
 	_update_header_status()
 	_update_shield_diagram()
@@ -683,7 +683,7 @@ func _on_action_chaff() -> void:
 	crt_static_amount = clamp(crt_static_amount + 0.4, 0.0, 1.0)
 	crt_glitch_amount = clamp(crt_glitch_amount + 0.15, 0.0, 1.0)
 	radar.deploy_chaff_countermeasure()
-	btn_chaff.text = "[ ISCAS/CHAFF (C: %d) ]" % ship.chaff_count
+	btn_chaff.text = "[ CHAFF (%d) (C) ]" % ship.chaff_count
 	_log("[color=#33ff66]> Cartucho Chaff ejetado! O torpedo mais próximo perdeu o travamento![/color]")
 	_update_radar_display()
 
@@ -846,7 +846,7 @@ func _apply_hack_exploit() -> void:
 	_log("[color=#ffff77]CARGUEIRO BAEPENDI: \"Aqui é o Capitão Lauro! Nossos campos foram estabilizados pelo código de Alcântara! Todos os 380 civis estão prontos para o teletransporte!\"[/color]")
 	_log("[color=#33ff66]> Torpedos fascistas no ar se autodestruíram! A rota está livre para o salvamento![/color]\n")
 	
-	btn_terminal.text = "[ HACK ATIVO: 1910 ]"
+	btn_terminal.text = "[ HACK: 1910 ]"
 	btn_terminal.modulate = Color(0.3, 1.0, 0.5)
 	
 	_update_all_displays()

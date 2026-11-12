@@ -6,8 +6,8 @@ uniform sampler2D screen_texture : hint_screen_texture, filter_linear_mipmap;
 uniform vec4 phosphor_color : source_color = vec4(0.25, 1.0, 0.45, 1.0);
 uniform float scanline_count : hint_range(50.0, 1000.0) = 360.0;
 uniform float scanline_intensity : hint_range(0.0, 1.0) = 0.2;
-uniform float curvature : hint_range(0.0, 0.15) = 0.025;
-uniform float vignette_intensity : hint_range(0.0, 2.0) = 0.9;
+uniform float curvature : hint_range(0.0, 0.15) = 0.016;
+uniform float vignette_intensity : hint_range(0.0, 2.0) = 0.65;
 uniform float glow_intensity : hint_range(0.0, 1.0) = 0.15;
 uniform float flicker_speed : hint_range(0.0, 60.0) = 24.0;
 uniform float flicker_intensity : hint_range(0.0, 0.1) = 0.015;
@@ -25,6 +25,8 @@ vec2 crt_curve(vec2 uv) {
     float delta2 = dot(delta, delta);
     float delta4 = delta2 * delta2;
     float factor = 1.0 + delta2 * curvature + delta4 * curvature;
+    // Compensa a distorção em barril para manter 100% da imagem visível sem cortes
+    delta *= (1.0 - curvature * 0.85);
     return 0.5 + delta * factor;
 }
 
@@ -57,8 +59,8 @@ void fragment() {
 
     vec2 curved_uv = crt_curve(uv);
 
-    // Screen bezel / cutoff
-    if (curved_uv.x < 0.005 || curved_uv.x > 0.995 || curved_uv.y < 0.005 || curved_uv.y > 0.995) {
+    // Screen bezel / cutoff suave nas bordas
+    if (curved_uv.x < 0.002 || curved_uv.x > 0.998 || curved_uv.y < 0.002 || curved_uv.y > 0.998) {
         COLOR = vec4(0.01, 0.03, 0.015, 1.0);
     } else {
         // Chromatic Aberration (RGB separation during shield stress / explosion shockwave)
