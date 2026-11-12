@@ -5,10 +5,22 @@ var grid_size: int = 17 # 17x17 grid
 var contacts: Array[Dictionary] = []
 var active_torpedoes: Array[Dictionary] = []
 
-# Relógio de Colapso do Baependi (3 minutos completos para permitir planejamento tático)
+# Relógio de Colapso do Baependi
 var km_collapse_seconds: float = 180.0
 var km_is_destroyed: bool = false
 var sweep_phase: int = 0
+
+# Fases da Emboscada Fascista
+# 0: Silêncio / Busca inicial (Apenas Baependi e Minas)
+# 1: Falange A emerge do hiperespaço
+# 2: Falange B flanqueia o setor
+var ambush_stage: int = 0
+var ambush_ticks: int = 0
+
+# Baralho de Eventos Aleatórios
+var next_event_cooldown: int = 5
+var ion_storm_ticks: int = 0
+var bonus_beam_civilians: int = 0
 
 func _init() -> void:
 	reset_simulation_sector()
@@ -18,8 +30,13 @@ func reset_simulation_sector() -> void:
 	active_torpedoes.clear()
 	km_collapse_seconds = 180.0
 	km_is_destroyed = false
+	ambush_stage = 0
+	ambush_ticks = 0
+	next_event_cooldown = randi_range(4, 7)
+	ion_storm_ticks = 0
+	bonus_beam_civilians = 0
 	
-	# Cargueiro Civil Baependi (Em perigo - Amarelo)
+	# O setor inicia SILENCIOSO: apenas a nave civil em perigo e os destroços
 	contacts.append({
 		"id": "BAE-01",
 		"name": "CARGUEIRO CIVIL BAEPENDI",
@@ -28,44 +45,11 @@ func reset_simulation_sector() -> void:
 		"color": "#ffff44",
 		"x": 2,
 		"y": -3,
-		"distance_km": 3200,
+		"distance_km": 3400,
 		"hull": 40,
 		"shield": 0,
 		"hostile": false,
 		"identified": false
-	})
-	
-	# Cruzadores de Ataque da Falange Fascista (Iniciam mais distantes, permitindo tempo de reação)
-	contacts.append({
-		"id": "FAL-01",
-		"name": "CRUZADOR FASCISTA FALANGE A",
-		"type": "WARSHIP",
-		"icon": "V",
-		"color": "#ff4444",
-		"x": -7,
-		"y": -6,
-		"distance_km": 11500,
-		"hull": 100,
-		"shield": 100,
-		"hostile": true,
-		"identified": false,
-		"torpedo_cooldown": 7 # Demora 7 pulsos antes do primeiro disparo
-	})
-	
-	contacts.append({
-		"id": "FAL-02",
-		"name": "CRUZADOR FASCISTA FALANGE B",
-		"type": "WARSHIP",
-		"icon": "V",
-		"color": "#ff4444",
-		"x": 7,
-		"y": -4,
-		"distance_km": 13800,
-		"hull": 100,
-		"shield": 100,
-		"hostile": true,
-		"identified": false,
-		"torpedo_cooldown": 12 # Dispara bem depois, escalonando a ameaça
 	})
 	
 	# Campo de minas na Zona Desmilitarizada de Abrolhos
@@ -94,37 +78,56 @@ func tick_collapse_timer(delta: float) -> bool:
 		for c in contacts:
 			if c.id == "BAE-01":
 				c.hull = 0
-		return true # Colapsou!
+		return true
 	return false
 
-# Avança o ciclo tático / tick do radar
-func update_tactical_tick(player_engines_eff: float, player_heading: int) -> Dictionary:
+# Avança o ciclo tático / tick do radar com estágios de emboscada e eventos
+func update_tactical_tick(player_engines_eff: float, player_heading: int, is_transporting: bool) -> Dictionary:
 	var tick_result = {
 		"events": [] as Array[String],
 		"torpedo_hits": [] as Array[Dictionary],
-		"new_torpedoes_launched": false
+		"new_torpedoes_launched": false,
+		"ambush_event": false
 	}
 	sweep_phase = (sweep_phase + 1) % 4
 	
-	# 1. Movimentação e disparo dos inimigos
+	# 1. Controle da Emboscada Escalonada
+	var bae_contact = _get_contact("BAE-01")
+	var bae_distance = bae_contact.distance_km if bae_contact else 9999
+	
+	if ambush_stage == 0:
+		# Dispara a Fase 1 quando o teletransporte é ativado ou a nave se aproxima
+		if is_transporting or bae_distance <= 1200:
+			ambush_stage = 1
+			ambush_ticks = 0
+			_spawn_falange_a()
+			tick_result["events"].append("!! DISTORÇÃO HIPERESPACIAL: NAVE HOSTIL DETECTADA! FALANGE A SAIU DE DOBRA !!")
+			tick_result["ambush_event"] = true
+	elif ambush_stage == 1:
+		ambush_ticks += 1
+		# 4 a 5 pulsos depois, o segundo cruzador surge flanqueando!
+		if ambush_ticks >= 4:
+			ambush_stage = 2
+			_spawn_falange_b()
+			tick_result["events"].append("!! EMBOSCADA TOTAL: SEGUNDA NAVE FASCISTA DETECTADA! FALANGE B FECHA O CERCO A LESTE !!")
+			tick_result["ambush_event"] = true
+
+	# 2. Movimentação e disparo dos inimigos
 	for contact in contacts:
 		if contact.hostile:
-			# Aproximação gradual e cadenciada
 			contact.distance_km = max(1200, contact.distance_km - 350)
-			if contact.x > 0 and randf() < 0.6: contact.x -= 1
-			elif contact.x < 0 and randf() < 0.6: contact.x += 1
-			if contact.y > 0 and randf() < 0.6: contact.y -= 1
-			elif contact.y < 0 and randf() < 0.6: contact.y += 1
+			if contact.x > 0 and randf() < 0.5: contact.x -= 1
+			elif contact.x < 0 and randf() < 0.5: contact.x += 1
+			if contact.y > 0 and randf() < 0.5: contact.y -= 1
+			elif contact.y < 0 and randf() < 0.5: contact.y += 1
 			
-			# Contagem de disparo de Torpedos
-			contact["torpedo_cooldown"] = contact.get("torpedo_cooldown", 7) - 1
-			if contact["torpedo_cooldown"] <= 0 and contact.distance_km <= 8000:
-				contact["torpedo_cooldown"] = randi_range(7, 10) # Recarga espaçada
+			contact["torpedo_cooldown"] = contact.get("torpedo_cooldown", 6) - 1
+			if contact["torpedo_cooldown"] <= 0 and contact.distance_km <= 8500:
+				contact["torpedo_cooldown"] = randi_range(6, 9)
 				_launch_torpedo_from(contact)
 				tick_result["events"].append("ALERTA TÁTICO: %s DISPAROU TORPEDO DE FÓTONS!" % contact.name)
 				tick_result["new_torpedoes_launched"] = true
 		else:
-			# Se for o Cargueiro Baependi e jogador tiver motores
 			if contact.id == "BAE-01" and player_engines_eff > 0.0:
 				var approach_rate = int(350 * player_engines_eff)
 				contact.distance_km = max(200, contact.distance_km - approach_rate)
@@ -132,11 +135,10 @@ func update_tactical_tick(player_engines_eff: float, player_heading: int) -> Dic
 					contact["transporters_ready"] = true
 					tick_result["events"].append("TELETRANSPORTE PRONTO: Ao alcance dos civis do Baependi!")
 	
-	# 2. Atualização dos Torpedos em vôo
+	# 3. Atualização dos Torpedos em vôo
 	var surviving_torps: Array[Dictionary] = []
 	for torp in active_torpedoes:
 		torp.distance_km -= torp.speed_km
-		# Movimento visual no radar rumo ao centro
 		if torp.x > 0: torp.x -= 1
 		elif torp.x < 0: torp.x += 1
 		if torp.y > 0: torp.y -= 1
@@ -146,15 +148,96 @@ func update_tactical_tick(player_engines_eff: float, player_heading: int) -> Dic
 			var impact_quadrant = _calculate_impact_quadrant(torp.origin_dx, torp.origin_dy, player_heading)
 			tick_result["torpedo_hits"].append({
 				"id": torp.id,
-				"damage": randi_range(18, 28), # Dano equilibrado
+				"damage": randi_range(18, 28),
 				"quadrant": impact_quadrant
 			})
-			tick_result["events"].append("! IMPACTO DE TORPEDO no escudo [%s] !" % impact_quadrant)
+			tick_result["events"].append("! IMPACTO DE TORPEDO no setor [%s] !" % impact_quadrant)
 		else:
 			surviving_torps.append(torp)
-			
 	active_torpedoes = surviving_torps
+	
+	# 4. Sorteio de Eventos Aleatórios Procedurais
+	if ambush_stage > 0:
+		next_event_cooldown -= 1
+		if next_event_cooldown <= 0:
+			next_event_cooldown = randi_range(5, 8)
+			var ev_msg = _trigger_procedural_event(player_engines_eff)
+			if ev_msg != "":
+				tick_result["events"].append(ev_msg)
+				
+	if ion_storm_ticks > 0:
+		ion_storm_ticks -= 1
+		
 	return tick_result
+
+func _spawn_falange_a() -> void:
+	contacts.append({
+		"id": "FAL-01",
+		"name": "CRUZADOR FASCISTA FALANGE A",
+		"type": "WARSHIP",
+		"icon": "V",
+		"color": "#ff4444",
+		"x": -7,
+		"y": -6,
+		"distance_km": 10500,
+		"hull": 100,
+		"shield": 100,
+		"hostile": true,
+		"identified": false,
+		"torpedo_cooldown": 5
+	})
+
+func _spawn_falange_b() -> void:
+	contacts.append({
+		"id": "FAL-02",
+		"name": "CRUZADOR FASCISTA FALANGE B",
+		"type": "WARSHIP",
+		"icon": "V",
+		"color": "#ff4444",
+		"x": 7,
+		"y": -4,
+		"distance_km": 11800,
+		"hull": 100,
+		"shield": 100,
+		"hostile": true,
+		"identified": false,
+		"torpedo_cooldown": 6
+	})
+
+func _trigger_procedural_event(player_engines_eff: float) -> String:
+	var event_roll = randi() % 5
+	match event_roll:
+		0:
+			# Vazamento de antimatéria acelera colapso
+			km_collapse_seconds = max(15.0, km_collapse_seconds - 25.0)
+			return "INCIDENTE NO BAEPENDI: Vazamento de antimatéria! Tempo de colapso reduzido em 25s!"
+		1:
+			# Tempestade de íons cega sensores
+			ion_storm_ticks = 3
+			return "ANOMALIA: Tempestade magnética de Abrolhos detectada! Sensores com interferência severa por 3 pulsos."
+		2:
+			# Fluxo heróico de civis: bônus de acolhimento
+			bonus_beam_civilians = 20
+			return "TRANSMISSÃO CIVIL: Equipe do Baependi abriu uma escotilha de vácuo auxiliar! Próximo resgate trará +20 civis extras!"
+		3:
+			# Mina espacial puxada pelo vetor gravitacional
+			if player_engines_eff < 0.25:
+				return "PERIGO DE DERIVA: Uma mina do campo de Abrolhos arranhou nossos defletores por falta de propulsão!"
+			else:
+				return "MANOBRA EVASIVA: Piloto desviou com sucesso de estilhaços de mina espacial à deriva."
+		4:
+			# Sobrecarga nos cruzadores fascistas
+			var fal = _get_contact("FAL-01")
+			if fal:
+				fal["torpedo_cooldown"] += 3
+				return "FALHA FASCISTA: Interceptamos telemetria da Falange A: capacitores deles superaqueceram (+3 pulsos de recarga)!"
+	return ""
+
+func _get_contact(p_id: String) -> Dictionary:
+	for c in contacts:
+		if c.id == p_id:
+			return c
+	return {}
 
 func _launch_torpedo_from(source: Dictionary) -> void:
 	var torp_id = "TORP-%02d" % (randi() % 90 + 10)
@@ -165,10 +248,9 @@ func _launch_torpedo_from(source: Dictionary) -> void:
 		"origin_dx": source.x,
 		"origin_dy": source.y,
 		"distance_km": min(6000, source.distance_km),
-		"speed_km": 900 # Velocidade cadenciada (dá tempo de agir em 5-6 pulsos!)
+		"speed_km": 900
 	})
 
-# Calcula qual quadrante de escudo (FWD, AFT, PORT, STBD) é atingido dependendo da proa da nave
 func _calculate_impact_quadrant(origin_dx: int, origin_dy: int, heading: int) -> String:
 	var angle_rad = atan2(float(origin_dy), float(origin_dx))
 	var angle_deg = int(rad_to_deg(angle_rad)) + 90
@@ -177,16 +259,11 @@ func _calculate_impact_quadrant(origin_dx: int, origin_dy: int, heading: int) ->
 	var rel_angle = (angle_deg - heading) % 360
 	if rel_angle < 0: rel_angle += 360
 	
-	if rel_angle >= 315 or rel_angle < 45:
-		return "FWD"  # Frente
-	elif rel_angle >= 45 and rel_angle < 135:
-		return "STBD" # Direita / Boreste
-	elif rel_angle >= 135 and rel_angle < 225:
-		return "AFT"  # Traseira / Popa
-	else:
-		return "PORT" # Esquerda / Bombordo
+	if rel_angle >= 315 or rel_angle < 45: return "FWD"
+	elif rel_angle >= 45 and rel_angle < 135: return "STBD"
+	elif rel_angle >= 135 and rel_angle < 225: return "AFT"
+	else: return "PORT"
 
-# Intercepta torpedo com Lasers
 func intercept_nearest_torpedo(laser_efficiency: float) -> Dictionary:
 	if active_torpedoes.is_empty():
 		return { "success": false, "message": "Nenhum torpedo hostil em trajetória!" }
@@ -203,15 +280,16 @@ func intercept_nearest_torpedo(laser_efficiency: float) -> Dictionary:
 	else:
 		return { "success": false, "message": "Disparo dos feixes errou o torpedo em aproximação!" }
 
-# Lança contramedidas / Chaff para despistar torpedos
 func deploy_chaff_countermeasure() -> bool:
 	if active_torpedoes.is_empty():
 		return false
 	active_torpedoes.remove_at(0)
 	return true
 
-# Renderiza o Radar Tático com navios, projéteis e fundo estilizado
 func render_ascii_radar(sensor_efficiency: float) -> String:
+	# Aplica penalidade se houver tempestade de íons
+	var effective_sensors = sensor_efficiency * 0.5 if ion_storm_ticks > 0 else sensor_efficiency
+	
 	var center = grid_size / 2
 	var grid: Array[Array] = []
 	
@@ -223,30 +301,28 @@ func render_ascii_radar(sensor_efficiency: float) -> String:
 			var dist = sqrt(float(dx * dx + dy * dy))
 			
 			if dist < 0.8:
-				row.append("[color=#00ffff]@[/color]") # Jogador (Ciano)
+				row.append("[color=#00ffff]@[/color]")
 			elif abs(dist - 3.5) < 0.6 or abs(dist - 7.0) < 0.6:
-				row.append("[color=#194824].[/color]") # Anel de alcance
+				row.append("[color=#194824].[/color]")
 			elif dx == 0 and abs(dy) < 8:
-				row.append("[color=#153d1e]|[/color]") # Eixo vertical
+				row.append("[color=#153d1e]|[/color]")
 			elif dy == 0 and abs(dx) < 8:
-				row.append("[color=#153d1e]-[/color]") # Eixo horizontal
+				row.append("[color=#153d1e]-[/color]")
 			else:
-				row.append(" ") # Espaço vazio
+				row.append(" ")
 		grid.append(row)
 		
-	# Contatos
 	for contact in contacts:
 		var cx = center + contact.x
 		var cy = center + contact.y
 		if cx >= 0 and cx < grid_size and cy >= 0 and cy < grid_size:
 			var icon_char = contact.icon
 			var icon_col = contact.color
-			if sensor_efficiency < 0.4:
+			if effective_sensors < 0.4:
 				icon_char = "?"
 				icon_col = "#ffaa00"
 			grid[cy][cx] = "[color=%s]%s[/color]" % [icon_col, icon_char]
 			
-	# Torpedos em vôo
 	for torp in active_torpedoes:
 		var tx = center + torp.x
 		var ty = center + torp.y
@@ -266,21 +342,25 @@ func render_ascii_radar(sensor_efficiency: float) -> String:
 	return result
 
 func get_contact_telemetry(sensor_efficiency: float) -> String:
+	var effective_sensors = sensor_efficiency * 0.5 if ion_storm_ticks > 0 else sensor_efficiency
 	var text = "[color=#33ff66]=== TELEMETRIA DE SENSORES ===[/color]\n"
 	
+	if ion_storm_ticks > 0:
+		text += "[color=#ffaa33]** INTERFERÊNCIA MAGNÉTICA ATIVA (%d pulsos) **[/color]\n" % ion_storm_ticks
+		
 	if not active_torpedoes.is_empty():
 		text += "[color=#ff2222]!! ALERTA: %d TORPEDO(S) EM CURSO DE COLISÃO !![/color]\n" % active_torpedoes.size()
 		for t in active_torpedoes:
 			text += "[color=#ff4444] >> %s: DIST %d KM[/color]\n" % [t.id, t.distance_km]
 			
 	for c in contacts:
-		var dist_str = "%d KM" % c.distance_km if sensor_efficiency >= 0.5 else "ESTIMADA ~%d KM" % (c.distance_km + (randi() % 500 - 250))
+		var dist_str = "%d KM" % c.distance_km if effective_sensors >= 0.5 else "ESTIMADA ~%d KM" % (c.distance_km + (randi() % 500 - 250))
 		var status_str = ""
 		if c.id == "BAE-01":
 			status_str = " | COLAPSO EM: %ds" % int(km_collapse_seconds) if not km_is_destroyed else " | DESTRUÍDA"
-		elif sensor_efficiency >= 0.75:
+		elif effective_sensors >= 0.75:
 			status_str = " | CASCO: %d%% | ESCUDO: %d%%" % [c.hull, c.shield]
-		elif sensor_efficiency >= 0.4:
+		elif effective_sensors >= 0.4:
 			status_str = " | HOSTIL" if c.hostile else " | NEUTRO"
 			
 		text += "[color=%s][%s] %s[/color] (%s)%s\n" % [c.color, c.icon, c.name, dist_str, status_str]

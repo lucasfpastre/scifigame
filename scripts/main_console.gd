@@ -153,10 +153,16 @@ func _advance_tactical_tick() -> void:
 		_log("[color=#ff2222]! %s[/color]" % triage_res["msg"])
 		sfx.play_alert()
 		
-	# 4. Avanço do radar e dos projéteis inimigos
+	# 4. Avanço do radar, emboscada escalonada e projéteis inimigos
 	var engine_eff = ship.get_system_efficiency("MOTORES")
-	var tick_result = radar.update_tactical_tick(engine_eff, ship.heading)
+	var tick_result = radar.update_tactical_tick(engine_eff, ship.heading, ship.transporter_active)
 	
+	if tick_result.get("ambush_event", false):
+		sfx.play_alert()
+		var pilot = ship.crew.get("PILOT")
+		var pilot_name = pilot.name if pilot else "Oficial"
+		_log("[color=#ff4444]%s: \"Capitão! Eles estavam à espreita esperando a gente baixar a guarda! É uma emboscada fascista!\"[/color]" % pilot_name)
+		
 	for ev in tick_result["events"]:
 		_log("[color=#ff6666]> %s[/color]" % ev)
 		if "TORPEDO" in ev:
@@ -188,7 +194,9 @@ func _process_transporter_tick() -> void:
 		var max_range = 1500 if (ship.crew.has("PILOT") and ship.crew["PILOT"].id == "PILOT_ARARIPE") else 1200
 		
 		if km_contact.distance_km <= max_range:
-			var beam_res = ship.beam_to_buffer(40)
+			var base_amt = 40 + radar.bonus_beam_civilians
+			radar.bonus_beam_civilians = 0
+			var beam_res = ship.beam_to_buffer(base_amt)
 			if beam_res["beamed"] > 0:
 				sfx.play_transporter()
 				_log("[color=#55ffff]>> FEIXE DE TRANSPORTE: +%d civis na plataforma! (Buffer: %d/%d)[/color]" % [beam_res["beamed"], ship.transporter_buffer, ship.max_buffer])
