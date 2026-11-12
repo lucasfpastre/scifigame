@@ -38,6 +38,15 @@ var sfx = null
 @onready var btn_repair: Button = %BtnRepair
 @onready var btn_comms: Button = %BtnComms
 
+# CRT Overlay & Efeitos Visuais / Glitch
+@onready var crt_overlay: ColorRect = %CRTOverlay
+var crt_mat: ShaderMaterial = null
+var crt_glitch_amount: float = 0.0
+var crt_shake_amount: float = 0.0
+var crt_chroma_amount: float = 0.0
+var crt_static_amount: float = 0.0
+var crt_roll_amount: float = 0.0
+
 # Controles do Power Grid
 var power_ui: Dictionary = {}
 
@@ -54,6 +63,10 @@ var tick_count: int = 1
 func _ready() -> void:
 	sfx = SoundEffectsScript.new()
 	add_child(sfx)
+	
+	if crt_overlay and crt_overlay.material:
+		crt_mat = crt_overlay.material.duplicate()
+		crt_overlay.material = crt_mat
 	
 	# Inicializa nave com a tripulação selecionada no Briefing
 	ship = ShipDataScript.new(GameState.selected_crew)
@@ -88,7 +101,9 @@ func _input(event: InputEvent) -> void:
 			_set_speed(1.5)
 
 func _process(delta: float) -> void:
-	if is_game_over:
+	_update_crt_fx(delta)
+	
+	if is_game_over or not radar:
 		return
 		
 	if not is_paused:
@@ -97,12 +112,81 @@ func _process(delta: float) -> void:
 		if collapsed:
 			_log("[color=#ff1111]*** CATÁSTROFE: O CASCO DO CARGUEIRO BAEPENDI COLAPSOU! ***[/color]")
 			_log("[color=#ff5555]O cargueiro civil foi destruído com todos os passageiros restantes.[/color]")
-			sfx.play_alert()
+			trigger_damage_fx(0.9, true)
 			
 		tick_accumulator += delta
 		if tick_accumulator >= tick_interval:
 			tick_accumulator = 0.0
 			_advance_tactical_tick()
+
+func trigger_damage_fx(severity: float, is_hull_hit: bool = false) -> void:
+	crt_glitch_amount = clamp(crt_glitch_amount + severity * 0.75, 0.0, 1.0)
+	crt_shake_amount = clamp(crt_shake_amount + severity * 0.025, 0.0, 0.045)
+	crt_chroma_amount = clamp(crt_chroma_amount + severity * 0.015, 0.0, 0.035)
+	crt_static_amount = clamp(crt_static_amount + severity * 0.55, 0.0, 0.85)
+	
+	if is_hull_hit:
+		if sfx: sfx.play_explosion()
+		if severity >= 0.6:
+			crt_roll_amount = 1.2
+			if sfx: sfx.play_hull_stress()
+	else:
+		if sfx: sfx.play_shield_hit()
+
+func _update_crt_fx(delta: float) -> void:
+	if not crt_mat:
+		return
+		
+	# Decaimento suave dos impactos
+	crt_glitch_amount = move_toward(crt_glitch_amount, 0.0, delta * 1.8)
+	crt_shake_amount = move_toward(crt_shake_amount, 0.0, delta * 0.08)
+	crt_chroma_amount = move_toward(crt_chroma_amount, 0.0, delta * 0.04)
+	crt_static_amount = move_toward(crt_static_amount, 0.0, delta * 1.5)
+	crt_roll_amount = move_toward(crt_roll_amount, 0.0, delta * 2.5)
+	
+	# Efeitos contínuos de estresse
+	var ambient_glitch = 0.0
+	var ambient_static = 0.0
+	var ambient_chroma = 0.0
+	
+	if ship:
+		if ship.hull < 35:
+			ambient_glitch = lerpf(0.1, 0.35, (35.0 - ship.hull) / 35.0)
+			ambient_chroma = 0.003
+		if ship.get_average_shield() <= 0:
+			ambient_static += 0.08
+			
+	if radar and radar.ion_storm_ticks > 0:
+		ambient_static += 0.25
+		ambient_glitch += 0.15
+		
+	var final_glitch = clamp(crt_glitch_amount + ambient_glitch, 0.0, 1.0)
+	var final_shake = clamp(crt_shake_amount, 0.0, 0.05)
+	var final_chroma = clamp(crt_chroma_amount + ambient_chroma, 0.0, 0.05)
+	var final_static = clamp(crt_static_amount + ambient_static, 0.0, 1.0)
+	var final_roll = clamp(crt_roll_amount, 0.0, 5.0)
+	
+	# Pulso de Alerta Vermelho / Dano
+	var alert_alpha = 0.0
+	var alert_col = Color(1.0, 0.1, 0.1, 0.0)
+	if is_game_over:
+		alert_col = Color(1.0, 0.15, 0.15, 0.35)
+		alert_alpha = 0.35
+	elif radar and not radar.active_torpedoes.is_empty():
+		var pulse = (sin(Time.get_ticks_msec() * 0.008) * 0.5 + 0.5) * 0.28
+		alert_col = Color(1.0, 0.1, 0.1, pulse)
+		alert_alpha = pulse
+	elif ship and ship.hull < 25:
+		var pulse = (sin(Time.get_ticks_msec() * 0.005) * 0.5 + 0.5) * 0.2
+		alert_col = Color(1.0, 0.3, 0.1, pulse)
+		alert_alpha = pulse
+		
+	crt_mat.set_shader_parameter("glitch_intensity", final_glitch)
+	crt_mat.set_shader_parameter("screen_shake", final_shake)
+	crt_mat.set_shader_parameter("chromatic_aberration", final_chroma)
+	crt_mat.set_shader_parameter("static_noise", final_static)
+	crt_mat.set_shader_parameter("roll_speed", final_roll)
+	crt_mat.set_shader_parameter("alert_tint", Color(alert_col.r, alert_col.g, alert_col.b, alert_alpha))
 
 func _toggle_pause() -> void:
 	if is_game_over: return
@@ -167,14 +251,19 @@ func _advance_tactical_tick() -> void:
 		_log("[color=#ff6666]> %s[/color]" % ev)
 		if "TORPEDO" in ev:
 			sfx.play_torpedo_warning()
+			crt_glitch_amount = clamp(crt_glitch_amount + 0.15, 0.0, 1.0)
+		elif "Tempestade magnética" in ev:
+			sfx.play_shield_hit()
+			trigger_damage_fx(0.55, false)
 			
 	# 5. Processa impactos de torpedos que atingiram a nave
 	for hit in tick_result["torpedo_hits"]:
 		var dmg_result = ship.apply_directional_damage(hit["damage"], hit["quadrant"])
-		sfx.play_alert()
 		if dmg_result["hull_damage"] > 0:
+			trigger_damage_fx(1.0, true)
 			_log("[color=#ff1111]! ALERTA DE AVARIA: Escudo [%s] penetrado! -%d no Casco![/color]" % [hit["quadrant"], dmg_result["hull_damage"]])
 		else:
+			trigger_damage_fx(0.45, false)
 			_log("[color=#ffff33]> Escudo [%s] absorveu o impacto do torpedo (%d dano).[/color]" % [hit["quadrant"], dmg_result["shield_absorbed"]])
 			
 	_update_all_displays()
@@ -385,6 +474,8 @@ func _on_action_fire_or_intercept() -> void:
 		return
 		
 	sfx.play_laser()
+	crt_glitch_amount = clamp(crt_glitch_amount + 0.08, 0.0, 1.0)
+	crt_chroma_amount = clamp(crt_chroma_amount + 0.003, 0.0, 0.035)
 	# Se houver torpedos em vôo, tenta interceptar primeiro
 	if not radar.active_torpedoes.is_empty():
 		var is_tiburcio = ship.crew.has("TACTICAL") and ship.crew["TACTICAL"].id == "TAC_TIBURCIO"
@@ -412,6 +503,8 @@ func _on_action_fire_or_intercept() -> void:
 			if target.hull <= 0:
 				ship.cruisers_destroyed_count += 1
 				_log("[color=#ffff33]** %s FOI DESTRUÍDO NO IMPACTO! **[/color]" % target.name)
+				sfx.play_explosion()
+				trigger_damage_fx(0.45, false)
 				radar.contacts.erase(target)
 		else:
 			_log("[color=#ffff55]> Nenhum alvo hostil em alcance de tiro.[/color]")
@@ -432,6 +525,8 @@ func _on_action_chaff() -> void:
 		
 	ship.chaff_count -= 1
 	sfx.play_chaff()
+	crt_static_amount = clamp(crt_static_amount + 0.4, 0.0, 1.0)
+	crt_glitch_amount = clamp(crt_glitch_amount + 0.15, 0.0, 1.0)
 	radar.deploy_chaff_countermeasure()
 	btn_chaff.text = "[ ISCAS/CHAFF (%d) ]" % ship.chaff_count
 	_log("[color=#33ff66]> Cartucho Chaff ejetado! O torpedo mais próximo perdeu o travamento![/color]")
@@ -462,6 +557,7 @@ func _on_action_comms() -> void:
 
 func _game_over(reason: String) -> void:
 	is_game_over = true
+	trigger_damage_fx(1.0, true)
 	
 	var debrief = GameState.record_run_result(
 		ship.civilians_rescued,

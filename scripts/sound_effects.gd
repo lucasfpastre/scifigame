@@ -69,3 +69,40 @@ func play_chaff() -> void:
 	for i in range(frames):
 		var noise = (randf() * 2.0 - 1.0) * 0.25 * (1.0 - float(i) / float(frames))
 		playback.push_frame(Vector2(noise, noise))
+
+func play_explosion() -> void:
+	if not playback: return
+	var frames = int(sample_rate * 0.35)
+	var phase = 0.0
+	for i in range(frames):
+		var t = float(i) / float(frames)
+		var freq = lerp(160.0, 35.0, t)
+		var noise = (randf() * 2.0 - 1.0) * 0.35 * (1.0 - t)
+		var bass = sin(phase) * 0.45 * (1.0 - t * 0.8)
+		var sample = clamp(noise + bass, -1.0, 1.0)
+		playback.push_frame(Vector2(sample, sample))
+		phase = fmod(phase + (TAU * freq) / sample_rate, TAU)
+
+func play_shield_hit() -> void:
+	if not playback: return
+	var frames = int(sample_rate * 0.16)
+	var phase = 0.0
+	for i in range(frames):
+		var t = float(i) / float(frames)
+		var freq = 520.0 + sin(t * 70.0) * 220.0
+		var noise = (randf() * 2.0 - 1.0) * 0.22 * (1.0 - t)
+		var buzz = sin(phase) * 0.28 * (1.0 - t)
+		var sample = clamp(buzz + noise, -1.0, 1.0)
+		playback.push_frame(Vector2(sample, sample))
+		phase = fmod(phase + (TAU * freq) / sample_rate, TAU)
+
+func play_hull_stress() -> void:
+	if not playback: return
+	var frames = int(sample_rate * 0.28)
+	var phase = 0.0
+	for i in range(frames):
+		var t = float(i) / float(frames)
+		var freq = 85.0 + sin(t * 12.0) * 35.0
+		var sample = sin(phase) * 0.3 * (1.0 - t)
+		playback.push_frame(Vector2(sample, sample))
+		phase = fmod(phase + (TAU * freq) / sample_rate, TAU)
