@@ -1,0 +1,382 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/main_console.gd" id="1_script"]
+[ext_resource type="Theme" path="res://scenes/terminal_theme.tres" id="2_theme"]
+[ext_resource type="Shader" path="res://shaders/crt_phosphor.gdshader" id="3_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_crt"]
+shader = ExtResource("3_shader")
+shader_parameter/phosphor_color = Color(0.25, 1, 0.45, 1)
+shader_parameter/scanline_count = 360.0
+shader_parameter/scanline_intensity = 0.2
+shader_parameter/curvature = 0.025
+shader_parameter/vignette_intensity = 0.9
+shader_parameter/glow_intensity = 0.15
+shader_parameter/flicker_speed = 24.0
+shader_parameter/flicker_intensity = 0.015
+
+[node name="MainConsole" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.015, 0.04, 0.02, 1)
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="Layout" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HeaderPanel" type="PanelContainer" parent="Margin/Layout"]
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="Margin/Layout/HeaderPanel"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="LblShip" type="Label" parent="Margin/Layout/HeaderPanel/HBox"]
+layout_mode = 2
+text = "[ U.S.S. KOBAYASHI MARU SIM // NX-900 ]"
+
+[node name="LblStardate" type="Label" parent="Margin/Layout/HeaderPanel/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "DATA ESTELAR: 4312.1 | TURNO: 01"
+
+[node name="LblAlert" type="Label" parent="Margin/Layout/HeaderPanel/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "[ COND. NORMAL ]"
+
+[node name="LblShield" type="Label" parent="Margin/Layout/HeaderPanel/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "ESCUDO: 100%"
+
+[node name="LblHull" type="Label" parent="Margin/Layout/HeaderPanel/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "CASCO: 100%"
+
+[node name="MainColumns" type="HBoxContainer" parent="Margin/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="LeftCol" type="VBoxContainer" parent="Margin/Layout/MainColumns"]
+custom_minimum_size = Vector2(330, 0)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="RadarPanel" type="PanelContainer" parent="Margin/Layout/MainColumns/LeftCol"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TxtRadar" type="RichTextLabel" parent="Margin/Layout/MainColumns/LeftCol/RadarPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+bbcode_enabled = true
+scroll_active = false
+autowrap_mode = 0
+
+[node name="TelemetryPanel" type="PanelContainer" parent="Margin/Layout/MainColumns/LeftCol"]
+layout_mode = 2
+
+[node name="TxtTelemetry" type="RichTextLabel" parent="Margin/Layout/MainColumns/LeftCol/TelemetryPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="CenterCol" type="VBoxContainer" parent="Margin/Layout/MainColumns"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="LogPanel" type="PanelContainer" parent="Margin/Layout/MainColumns/CenterCol"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TxtLog" type="RichTextLabel" parent="Margin/Layout/MainColumns/CenterCol/LogPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+bbcode_enabled = true
+scroll_following = true
+
+[node name="CrewPanel" type="PanelContainer" parent="Margin/Layout/MainColumns/CenterCol"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+
+[node name="TxtCrew" type="RichTextLabel" parent="Margin/Layout/MainColumns/CenterCol/CrewPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+bbcode_enabled = true
+text = "[color=#55ffff][PONTE DE COMANDO][/color] Tripulação a postos, aguardando ordens do Capitão."
+
+[node name="RightCol" type="VBoxContainer" parent="Margin/Layout/MainColumns"]
+custom_minimum_size = Vector2(340, 0)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PowerPanel" type="PanelContainer" parent="Margin/Layout/MainColumns/RightCol"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBox" type="VBoxContainer" parent="Margin/Layout/MainColumns/RightCol/PowerPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LblPowerHeader" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox"]
+layout_mode = 2
+text = "[ GERENCIAMENTO DO REATOR ]"
+horizontal_alignment = 1
+
+[node name="LblPowerFree" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "REATOR: 2/10 MW DISPONÍVEL"
+horizontal_alignment = 1
+
+[node name="HSeparator1" type="HSeparator" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox"]
+layout_mode = 2
+
+[node name="Row_MOTORES" type="HBoxContainer" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LblName" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_MOTORES"]
+custom_minimum_size = Vector2(74, 0)
+layout_mode = 2
+text = "MOTORES"
+
+[node name="LblBar" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_MOTORES"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[■■□□] 2 MW"
+
+[node name="LblInfo" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_MOTORES"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+text = "EFIC: 100%"
+
+[node name="BtnMinus" type="Button" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_MOTORES"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+text = "-"
+
+[node name="BtnPlus" type="Button" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_MOTORES"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+text = "+"
+
+[node name="Row_ESCUDOS" type="HBoxContainer" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LblName" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_ESCUDOS"]
+custom_minimum_size = Vector2(74, 0)
+layout_mode = 2
+text = "ESCUDOS"
+
+[node name="LblBar" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_ESCUDOS"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[■■□□] 2 MW"
+
+[node name="LblInfo" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_ESCUDOS"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+text = "EFIC: 100%"
+
+[node name="BtnMinus" type="Button" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_ESCUDOS"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+text = "-"
+
+[node name="BtnPlus" type="Button" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_ESCUDOS"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+text = "+"
+
+[node name="Row_SENSORES" type="HBoxContainer" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LblName" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_SENSORES"]
+custom_minimum_size = Vector2(74, 0)
+layout_mode = 2
+text = "SENSORES"
+
+[node name="LblBar" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_SENSORES"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[■■□□] 2 MW"
+
+[node name="LblInfo" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_SENSORES"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+text = "EFIC: 100%"
+
+[node name="BtnMinus" type="Button" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_SENSORES"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+text = "-"
+
+[node name="BtnPlus" type="Button" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_SENSORES"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+text = "+"
+
+[node name="Row_LASERS" type="HBoxContainer" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LblName" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_LASERS"]
+custom_minimum_size = Vector2(74, 0)
+layout_mode = 2
+text = "LASERS"
+
+[node name="LblBar" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_LASERS"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[■■□□] 2 MW"
+
+[node name="LblInfo" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_LASERS"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+text = "EFIC: 100%"
+
+[node name="BtnMinus" type="Button" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_LASERS"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+text = "-"
+
+[node name="BtnPlus" type="Button" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_LASERS"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+text = "+"
+
+[node name="Row_SUPORTE" type="HBoxContainer" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LblName" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_SUPORTE"]
+custom_minimum_size = Vector2(74, 0)
+layout_mode = 2
+text = "SUPORTE"
+
+[node name="LblBar" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_SUPORTE"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[■□] 1 MW"
+
+[node name="LblInfo" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_SUPORTE"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+text = "NORMAL"
+
+[node name="BtnMinus" type="Button" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_SUPORTE"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+text = "-"
+
+[node name="BtnPlus" type="Button" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_SUPORTE"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+text = "+"
+
+[node name="HSeparator2" type="HSeparator" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox"]
+layout_mode = 2
+
+[node name="LblHelp" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "DIRETIVA DE COMANDO:
+- Distribua MW entre os módulos.
+- Confiança da tripulação mitiga penalidades ao drenar energia.
+- Suporte a 0 MW libera energia em emergências."
+autowrap_mode = 2
+
+[node name="ActionBar" type="PanelContainer" parent="Margin/Layout"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="Margin/Layout/ActionBar"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BtnScan" type="Button" parent="Margin/Layout/ActionBar/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[ ESCANEAR ]"
+
+[node name="BtnApproach" type="Button" parent="Margin/Layout/ActionBar/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[ APROXIMAR-SE ]"
+
+[node name="BtnFire" type="Button" parent="Margin/Layout/ActionBar/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[ DISPARAR ]"
+
+[node name="BtnComms" type="Button" parent="Margin/Layout/ActionBar/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[ TRANSMITIR ]"
+
+[node name="BtnRepair" type="Button" parent="Margin/Layout/ActionBar/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[ REPARAR ]"
+
+[node name="BtnAlert" type="Button" parent="Margin/Layout/ActionBar/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[ ALERTA ]"
+
+[node name="CRTOverlay" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_crt")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
