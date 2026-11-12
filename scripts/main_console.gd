@@ -208,11 +208,13 @@ func trigger_damage_fx(severity: float, is_hull_hit: bool = false) -> void:
 	crt_static_amount = clamp(crt_static_amount + severity * 0.55, 0.0, 0.85)
 	
 	if is_hull_hit:
+		Input.vibrate_handheld(int(clamp(320 * severity, 100, 500)))
 		if sfx: sfx.play_explosion()
 		if severity >= 0.6:
 			crt_roll_amount = 1.2
 			if sfx: sfx.play_hull_stress()
 	else:
+		Input.vibrate_handheld(int(clamp(90 * severity, 30, 150)))
 		if sfx: sfx.play_shield_hit()
 
 func _update_crt_fx(delta: float) -> void:
@@ -567,16 +569,19 @@ func _update_radar_display() -> void:
 func _on_action_rotate_left() -> void:
 	if is_game_over: return
 	sfx.play_click()
+	Input.vibrate_handheld(30)
 	ship.rotate_ship(-90)
 
 func _on_action_rotate_right() -> void:
 	if is_game_over: return
 	sfx.play_click()
+	Input.vibrate_handheld(30)
 	ship.rotate_ship(90)
 
 func _on_compass_direct(heading_deg: int) -> void:
 	if is_game_over: return
 	sfx.play_click()
+	Input.vibrate_handheld(35)
 	ship.set_ship_heading(heading_deg)
 
 func _on_action_warp() -> void:
@@ -588,6 +593,7 @@ func _on_action_warp() -> void:
 		return
 		
 	sfx.play_warp_jump()
+	Input.vibrate_handheld(350)
 	trigger_damage_fx(0.6, false)
 	crt_static_amount = 0.5
 	
@@ -599,6 +605,7 @@ func _on_action_warp() -> void:
 func _on_action_transport_toggle() -> void:
 	if is_game_over: return
 	ship.transporter_active = not ship.transporter_active
+	Input.vibrate_handheld(80)
 	if ship.transporter_active:
 		sfx.play_alert()
 		btn_transport.text = "[ TELETRANSPORTE (ATIVO!) ]"
@@ -610,7 +617,6 @@ func _on_action_transport_toggle() -> void:
 		_log("[color=#33ff66]> Teletransporte suspenso. Geradores de escudo rearmados.[/color]")
 	_update_header_status()
 	_update_shield_diagram()
-	_update_shield_diagram()
 
 func _on_action_fire_or_intercept() -> void:
 	if is_game_over: return
@@ -621,6 +627,7 @@ func _on_action_fire_or_intercept() -> void:
 		return
 		
 	sfx.play_laser()
+	Input.vibrate_handheld(60)
 	crt_glitch_amount = clamp(crt_glitch_amount + 0.08, 0.0, 1.0)
 	crt_chroma_amount = clamp(crt_chroma_amount + 0.003, 0.0, 0.035)
 	# Se houver torpedos em vôo, tenta interceptar primeiro
@@ -672,6 +679,7 @@ func _on_action_chaff() -> void:
 		
 	ship.chaff_count -= 1
 	sfx.play_chaff()
+	Input.vibrate_handheld(120)
 	crt_static_amount = clamp(crt_static_amount + 0.4, 0.0, 1.0)
 	crt_glitch_amount = clamp(crt_glitch_amount + 0.15, 0.0, 1.0)
 	radar.deploy_chaff_countermeasure()

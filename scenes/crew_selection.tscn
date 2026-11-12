@@ -129,12 +129,14 @@ theme_override_constants/separation = 6
 
 [node name="BtnPilot0" type="Button" parent="Margin/Layout/GridCards/PanelPilot/VBox/HBoxBtns"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "[ ESCOLHER ]"
 
 [node name="BtnPilot1" type="Button" parent="Margin/Layout/GridCards/PanelPilot/VBox/HBoxBtns"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "[ ESCOLHER ]"
@@ -161,12 +163,14 @@ theme_override_constants/separation = 6
 
 [node name="BtnEng0" type="Button" parent="Margin/Layout/GridCards/PanelEng/VBox/HBoxBtns"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "[ ESCOLHER ]"
 
 [node name="BtnEng1" type="Button" parent="Margin/Layout/GridCards/PanelEng/VBox/HBoxBtns"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "[ ESCOLHER ]"
@@ -193,12 +197,14 @@ theme_override_constants/separation = 6
 
 [node name="BtnMed0" type="Button" parent="Margin/Layout/GridCards/PanelMed/VBox/HBoxBtns"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "[ ESCOLHER ]"
 
 [node name="BtnMed1" type="Button" parent="Margin/Layout/GridCards/PanelMed/VBox/HBoxBtns"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "[ ESCOLHER ]"
@@ -225,12 +231,14 @@ theme_override_constants/separation = 6
 
 [node name="BtnTac0" type="Button" parent="Margin/Layout/GridCards/PanelTac/VBox/HBoxBtns"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "[ ESCOLHER ]"
 
 [node name="BtnTac1" type="Button" parent="Margin/Layout/GridCards/PanelTac/VBox/HBoxBtns"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "[ ESCOLHER ]"

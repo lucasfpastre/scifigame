@@ -78,6 +78,7 @@ func _setup_buttons() -> void:
 
 func _on_cycle_ship() -> void:
 	sfx.play_click()
+	Input.vibrate_handheld(25)
 	current_ship_idx = (current_ship_idx + 1) % available_ship_ids.size()
 	var new_id = available_ship_ids[current_ship_idx]
 	if GameState.unlocked_ships.has(new_id):
@@ -89,9 +90,11 @@ func _on_unlock_ship() -> void:
 	var target_id = available_ship_ids[current_ship_idx]
 	if GameState.unlock_ship(target_id):
 		sfx.play_alert()
+		Input.vibrate_handheld(100)
 		_update_ship_ui()
 	else:
 		sfx.play_error()
+		Input.vibrate_handheld(40)
 
 func _on_scores_pressed() -> void:
 	sfx.play_click()
@@ -132,6 +135,7 @@ func _update_ship_ui() -> void:
 func _select_officer(role_str: String, index: int) -> void:
 	selected_indices[role_str] = index
 	sfx.play_click()
+	Input.vibrate_handheld(25)
 	_update_all_cards()
 
 func _update_all_cards() -> void:
@@ -161,6 +165,7 @@ func _update_card(role_str: String, txt_display: RichTextLabel, btn0: Button, bt
 
 func _on_launch_pressed() -> void:
 	sfx.play_alert()
+	Input.vibrate_handheld(120)
 	var final_crew: Dictionary = {}
 	for role_str in selected_indices:
 		var list = roster[role_str]

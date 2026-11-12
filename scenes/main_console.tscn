@@ -175,12 +175,14 @@ theme_override_constants/separation = 6
 
 [node name="BtnRotateLeft" type="Button" parent="Margin/Layout/MainColumns/RightCol/ShieldsPanel/VBoxShields/HBoxRotate"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "[ ↺ ESQ (Q) ]"
 
 [node name="BtnRotateRight" type="Button" parent="Margin/Layout/MainColumns/RightCol/ShieldsPanel/VBoxShields/HBoxRotate"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "[ DIR (E) ↻ ]"
@@ -223,12 +225,12 @@ layout_mode = 2
 text = "EFIC: 100%"
 
 [node name="BtnMinus" type="Button" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_MOTORES"]
-custom_minimum_size = Vector2(28, 28)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 text = "-"
 
 [node name="BtnPlus" type="Button" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_MOTORES"]
-custom_minimum_size = Vector2(28, 28)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 text = "+"
 
@@ -253,12 +255,12 @@ layout_mode = 2
 text = "EFIC: 100%"
 
 [node name="BtnMinus" type="Button" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_ESCUDOS"]
-custom_minimum_size = Vector2(28, 28)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 text = "-"
 
 [node name="BtnPlus" type="Button" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_ESCUDOS"]
-custom_minimum_size = Vector2(28, 28)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 text = "+"
 
@@ -283,12 +285,12 @@ layout_mode = 2
 text = "EFIC: 100%"
 
 [node name="BtnMinus" type="Button" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_SENSORES"]
-custom_minimum_size = Vector2(28, 28)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 text = "-"
 
 [node name="BtnPlus" type="Button" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_SENSORES"]
-custom_minimum_size = Vector2(28, 28)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 text = "+"
 
@@ -313,12 +315,12 @@ layout_mode = 2
 text = "EFIC: 100%"
 
 [node name="BtnMinus" type="Button" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_LASERS"]
-custom_minimum_size = Vector2(28, 28)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 text = "-"
 
 [node name="BtnPlus" type="Button" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_LASERS"]
-custom_minimum_size = Vector2(28, 28)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 text = "+"
 
@@ -343,17 +345,17 @@ layout_mode = 2
 text = "NORMAL"
 
 [node name="BtnMinus" type="Button" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_SUPORTE"]
-custom_minimum_size = Vector2(28, 28)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 text = "-"
 
 [node name="BtnPlus" type="Button" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox/Row_SUPORTE"]
-custom_minimum_size = Vector2(28, 28)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 text = "+"
 
 [node name="ActionBar" type="PanelContainer" parent="Margin/Layout"]
-custom_minimum_size = Vector2(0, 52)
+custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 
 [node name="HBox" type="HBoxContainer" parent="Margin/Layout/ActionBar"]
