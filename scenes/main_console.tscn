@@ -55,22 +55,22 @@ layout_mode = 2
 
 [node name="HBox" type="HBoxContainer" parent="Margin/Layout/HeaderPanel"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 14
 
 [node name="LblShip" type="Label" parent="Margin/Layout/HeaderPanel/HBox"]
 layout_mode = 2
-text = "[ U.S.S. KOBAYASHI MARU SIM // NX-900 ]"
+text = "[ NX-900 KOBAYASHI SIM ]"
 
-[node name="LblStardate" type="Label" parent="Margin/Layout/HeaderPanel/HBox"]
+[node name="LblCollapseTimer" type="Label" parent="Margin/Layout/HeaderPanel/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "DATA ESTELAR: 4312.1 | TURNO: 01"
+text = "COLAPSO K.MARU: 01:35"
 
-[node name="LblAlert" type="Label" parent="Margin/Layout/HeaderPanel/HBox"]
+[node name="LblRescued" type="Label" parent="Margin/Layout/HeaderPanel/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "[ COND. NORMAL ]"
+text = "CIVIS: 0/380"
 
 [node name="LblShield" type="Label" parent="Margin/Layout/HeaderPanel/HBox"]
 unique_name_in_owner = true
@@ -81,6 +81,11 @@ text = "ESCUDO: 100%"
 unique_name_in_owner = true
 layout_mode = 2
 text = "CASCO: 100%"
+
+[node name="LblAlert" type="Label" parent="Margin/Layout/HeaderPanel/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "[ COND. NORMAL ]"
 
 [node name="MainColumns" type="HBoxContainer" parent="Margin/Layout"]
 layout_mode = 2
@@ -143,18 +148,39 @@ custom_minimum_size = Vector2(340, 0)
 layout_mode = 2
 theme_override_constants/separation = 6
 
+[node name="ShieldsPanel" type="PanelContainer" parent="Margin/Layout/MainColumns/RightCol"]
+layout_mode = 2
+
+[node name="VBoxShields" type="VBoxContainer" parent="Margin/Layout/MainColumns/RightCol/ShieldsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TxtShieldDiagram" type="RichTextLabel" parent="Margin/Layout/MainColumns/RightCol/ShieldsPanel/VBoxShields"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 105)
+layout_mode = 2
+bbcode_enabled = true
+text = "=== ESCUDOS DIRECIONAIS ===
+       [ FWD: 100% ]
+           /---\\
+[PORT: 100%] | @ | [STBD: 100%]
+           \\---/
+       [ AFT: 100% ]
+PROA: 000° (NORTE)"
+scroll_active = false
+
+[node name="BtnRotate" type="Button" parent="Margin/Layout/MainColumns/RightCol/ShieldsPanel/VBoxShields"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "[ GIRAR NAVE (+90°) ]"
+
 [node name="PowerPanel" type="PanelContainer" parent="Margin/Layout/MainColumns/RightCol"]
 layout_mode = 2
 size_flags_vertical = 3
 
 [node name="VBox" type="VBoxContainer" parent="Margin/Layout/MainColumns/RightCol/PowerPanel"]
 layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="LblPowerHeader" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox"]
-layout_mode = 2
-text = "[ GERENCIAMENTO DO REATOR ]"
-horizontal_alignment = 1
+theme_override_constants/separation = 8
 
 [node name="LblPowerFree" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox"]
 unique_name_in_owner = true
@@ -315,61 +341,49 @@ custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
 text = "+"
 
-[node name="HSeparator2" type="HSeparator" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox"]
-layout_mode = 2
-
-[node name="LblHelp" type="Label" parent="Margin/Layout/MainColumns/RightCol/PowerPanel/VBox"]
-layout_mode = 2
-size_flags_vertical = 3
-text = "DIRETIVA DE COMANDO:
-- Distribua MW entre os módulos.
-- Confiança da tripulação mitiga penalidades ao drenar energia.
-- Suporte a 0 MW libera energia em emergências."
-autowrap_mode = 2
-
 [node name="ActionBar" type="PanelContainer" parent="Margin/Layout"]
-custom_minimum_size = Vector2(0, 50)
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 
 [node name="HBox" type="HBoxContainer" parent="Margin/Layout/ActionBar"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
-[node name="BtnScan" type="Button" parent="Margin/Layout/ActionBar/HBox"]
+[node name="BtnPause" type="Button" parent="Margin/Layout/ActionBar/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "[ ESCANEAR ]"
+text = "[ || PAUSA ]"
 
-[node name="BtnApproach" type="Button" parent="Margin/Layout/ActionBar/HBox"]
+[node name="BtnTransport" type="Button" parent="Margin/Layout/ActionBar/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "[ APROXIMAR-SE ]"
+text = "[ TELETRANSPORTE ]"
 
 [node name="BtnFire" type="Button" parent="Margin/Layout/ActionBar/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "[ DISPARAR ]"
+text = "[ LASERS / INTERCEPTAR ]"
+
+[node name="BtnChaff" type="Button" parent="Margin/Layout/ActionBar/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[ ISCAS/CHAFF (3) ]"
+
+[node name="BtnRepair" type="Button" parent="Margin/Layout/ActionBar/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[ REPARAR CASCO ]"
 
 [node name="BtnComms" type="Button" parent="Margin/Layout/ActionBar/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "[ TRANSMITIR ]"
-
-[node name="BtnRepair" type="Button" parent="Margin/Layout/ActionBar/HBox"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-text = "[ REPARAR ]"
-
-[node name="BtnAlert" type="Button" parent="Margin/Layout/ActionBar/HBox"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-text = "[ ALERTA ]"
 
 [node name="CRTOverlay" type="ColorRect" parent="."]
 material = SubResource("ShaderMaterial_crt")

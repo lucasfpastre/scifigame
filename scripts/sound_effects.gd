@@ -25,7 +25,6 @@ func play_beep(freq: float = 880.0, duration: float = 0.05, volume: float = 0.2)
 	
 	for i in range(frames_to_fill):
 		var sample = sin(phase) * volume
-		# Decaimento suave para evitar estalo no final
 		sample *= (1.0 - float(i) / float(frames_to_fill))
 		playback.push_frame(Vector2(sample, sample))
 		phase = fmod(phase + phase_increment, TAU)
@@ -49,3 +48,24 @@ func play_laser() -> void:
 
 func play_alert() -> void:
 	play_beep(650.0, 0.08, 0.3)
+
+func play_torpedo_warning() -> void:
+	play_beep(950.0, 0.06, 0.35)
+
+func play_transporter() -> void:
+	if not playback: return
+	var frames = int(sample_rate * 0.25)
+	var phase = 0.0
+	for i in range(frames):
+		var t = float(i) / float(frames)
+		var freq = 600.0 + sin(t * 30.0) * 200.0
+		var sample = sin(phase) * 0.2 * (1.0 - t * 0.5)
+		playback.push_frame(Vector2(sample, sample))
+		phase = fmod(phase + (TAU * freq) / sample_rate, TAU)
+
+func play_chaff() -> void:
+	if not playback: return
+	var frames = int(sample_rate * 0.12)
+	for i in range(frames):
+		var noise = (randf() * 2.0 - 1.0) * 0.25 * (1.0 - float(i) / float(frames))
+		playback.push_frame(Vector2(noise, noise))
