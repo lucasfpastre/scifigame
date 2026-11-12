@@ -119,42 +119,45 @@ static func record_run_result(civilians_saved: int, casualties: int, ticks_survi
 	lifetime_casualties += casualties
 	
 	# Cálculo de Pontos de Honra de Alcântara (PHA)
-	var pts_civilians = civilians_saved * 8
-	var pts_casualties_penalty = casualties * 12
+	var pts_civilians = civilians_saved * 10
+	var pts_casualties_penalty = casualties * 15
 	var pts_ticks = ticks_survived * 5
-	var pts_torpedoes = torpedoes_intercepted * 25
-	var pts_cruisers = cruisers_destroyed * 200
+	var pts_torpedoes = torpedoes_intercepted * 30
+	var pts_cruisers = cruisers_destroyed * 250
 	
 	var total_score = max(0, pts_civilians - pts_casualties_penalty + pts_ticks + pts_torpedoes + pts_cruisers)
 	
 	# Bônus ético especial se resgatou mais da metade
 	var ethical_bonus = 0
 	if civilians_saved >= 190:
-		ethical_bonus = 150
+		ethical_bonus = 250
 		total_score += ethical_bonus
 		
-	var pha_earned = int(total_score * 0.4) # Converte pontos em moeda PHA
+	var pha_earned = int(total_score * 0.1) # Converte pontos em moeda PHA (10% do score)
 	pha += pha_earned
 	
 	# Patente Militar Concedida
 	var rank_title = "Cadete de 3ª Classe"
 	var evaluation = "Ainda há muito a aprender sobre o peso do comando e a frieza sob fogo."
 	
-	if total_score >= 2600:
+	if total_score >= 3200:
 		rank_title = "Comandante Honorário // Medalha Almirante Negro"
-		evaluation = "Desempenho lendário. O resgate do Baependi entrará para a história militar da Coalizão."
-	elif total_score >= 1800:
-		rank_title = "Capitão de Corveta Condecorado"
+		evaluation = "Desempenho lendário. O resgate quase total do Baependi entrará para a história militar da Coalizão."
+	elif total_score >= 2200:
+		rank_title = "Capitão de Fragata Condecorado"
 		evaluation = "Liderança exemplar. Demonstrou fibra heróica diante de probabilidades impossíveis."
-	elif total_score >= 1200:
-		rank_title = "Primeiro-Tenente da Frota"
+	elif total_score >= 1400:
+		rank_title = "Capitão de Corveta"
 		evaluation = "Excelente controle de crise e bravura no cumprimento da diretiva de salvamento."
-	elif total_score >= 700:
-		rank_title = "Segundo-Tenente da Frota"
+	elif total_score >= 800:
+		rank_title = "Primeiro-Tenente da Frota"
 		evaluation = "Cumprimento honroso das ordens de salvamento, apesar das avarias severas."
-	elif total_score >= 350:
-		rank_title = "Aspirante a Oficial"
+	elif total_score >= 400:
+		rank_title = "Segundo-Tenente da Frota"
 		evaluation = "Demonstrou nobreza tática na Zona Desmilitarizada. Continue seu treinamento."
+	elif total_score >= 150:
+		rank_title = "Aspirante a Oficial"
+		evaluation = "Primeiros passos sob fogo real. Mantenha a calma na próxima simulação."
 		
 	var debrief = {
 		"run_number": total_runs,

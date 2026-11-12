@@ -41,8 +41,8 @@ func _render_debriefing() -> void:
 		text += "   - [color=#ffff44]Bônus de Mérito Humanitário: +%d pts[/color]\n" % d.get("ethical_bonus", 0)
 		
 	text += "\n[color=#ffffff]2. ENFRENTAMENTO TÁTICO & COMBATE:[/color]\n"
-	text += "   - Torpedos Hostis Interceptados: %d (+%d pts)\n" % [d.get("torpedoes_intercepted", 0), d.get("torpedoes_intercepted", 0) * 25]
-	text += "   - Belonaves Fascistas Destruídas: %d (+%d pts)\n" % [d.get("cruisers_destroyed", 0), d.get("cruisers_destroyed", 0) * 200]
+	text += "   - Torpedos Hostis Interceptados: %d (+%d pts)\n" % [d.get("torpedoes_intercepted", 0), d.get("torpedoes_intercepted", 0) * 30]
+	text += "   - Belonaves Fascistas Destruídas: %d (+%d pts)\n" % [d.get("cruisers_destroyed", 0), d.get("cruisers_destroyed", 0) * 250]
 	text += "   - Tempo de Resistência: %d pulsos (+%d pts)\n" % [d.get("ticks_survived", 0), d.get("pts_ticks", 0)]
 	
 	text += "\n[color=#33ff66]----------------------------------------------------[/color]\n"
