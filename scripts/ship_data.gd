@@ -212,12 +212,24 @@ func apply_directional_damage(amount: int, target_quadrant: String) -> Dictionar
 	crew_intercom.emit(random_officer.avatar_ascii, random_officer.get_damage_reaction())
 	return result
 
-func rotate_ship_90() -> void:
-	heading = (heading + 90) % 360
+func rotate_ship(delta_deg: int) -> void:
+	heading = (heading + delta_deg) % 360
+	if heading < 0: heading += 360
 	quadrants_changed.emit(quadrants, heading)
 	var pilot = crew.get("PILOT")
 	if pilot:
 		crew_intercom.emit(pilot.avatar_ascii, "%s: \"Executando manobra de giro! Proa alinhada para %d°.\"" % [pilot.name, heading])
+
+func set_ship_heading(new_heading: int) -> void:
+	heading = new_heading % 360
+	if heading < 0: heading += 360
+	quadrants_changed.emit(quadrants, heading)
+	var pilot = crew.get("PILOT")
+	if pilot:
+		crew_intercom.emit(pilot.avatar_ascii, "%s: \"Alinhamento vetorial estabelecido! Proa em %d°.\"" % [pilot.name, heading])
+
+func rotate_ship_90() -> void:
+	rotate_ship(90)
 
 func regenerate_shields() -> void:
 	var shield_pwr = systems.get("ESCUDOS", 0)

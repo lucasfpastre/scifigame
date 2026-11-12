@@ -169,10 +169,21 @@ text = "=== ESCUDOS DIRECIONAIS ===
 PROA: 000° (NORTE)"
 scroll_active = false
 
-[node name="BtnRotate" type="Button" parent="Margin/Layout/MainColumns/RightCol/ShieldsPanel/VBoxShields"]
+[node name="HBoxRotate" type="HBoxContainer" parent="Margin/Layout/MainColumns/RightCol/ShieldsPanel/VBoxShields"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BtnRotateLeft" type="Button" parent="Margin/Layout/MainColumns/RightCol/ShieldsPanel/VBoxShields/HBoxRotate"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "[ GIRAR NAVE (+90°) ]"
+size_flags_horizontal = 3
+text = "[ ↺ ESQ (Q) ]"
+
+[node name="BtnRotateRight" type="Button" parent="Margin/Layout/MainColumns/RightCol/ShieldsPanel/VBoxShields/HBoxRotate"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[ DIR (E) ↻ ]"
 
 [node name="PowerPanel" type="PanelContainer" parent="Margin/Layout/MainColumns/RightCol"]
 layout_mode = 2
@@ -365,37 +376,43 @@ text = "[ 1.0x ]"
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "[ TELETRANSPORTE ]"
+text = "[ TELETRANSPORTE (T) ]"
 
 [node name="BtnFire" type="Button" parent="Margin/Layout/ActionBar/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "[ LASERS / INTERCEPTAR ]"
+text = "[ LASERS (F) ]"
 
 [node name="BtnChaff" type="Button" parent="Margin/Layout/ActionBar/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "[ ISCAS/CHAFF (3) ]"
+text = "[ ISCAS/CHAFF (C) ]"
 
 [node name="BtnRepair" type="Button" parent="Margin/Layout/ActionBar/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "[ REPARAR CASCO ]"
+text = "[ REPARAR (R) ]"
 
 [node name="BtnComms" type="Button" parent="Margin/Layout/ActionBar/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "[ TRANSMITIR ]"
+text = "[ TRANSMITIR (M) ]"
+
+[node name="BtnWarp" type="Button" parent="Margin/Layout/ActionBar/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[ EVASÃO / DOBRA (V) ]"
 
 [node name="BtnTerminal" type="Button" parent="Margin/Layout/ActionBar/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "[ CONSOLE AUX ]"
+text = "[ CONSOLE AUX (TAB) ]"
 
 [node name="HackModal" type="ColorRect" parent="."]
 unique_name_in_owner = true

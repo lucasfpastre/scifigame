@@ -26,7 +26,8 @@ var sfx = null
 
 # Nós de Interface - Painel Direito (Escudos e Reator)
 @onready var txt_shield_diagram: RichTextLabel = %TxtShieldDiagram
-@onready var btn_rotate: Button = %BtnRotate
+@onready var btn_rotate_left: Button = %BtnRotateLeft
+@onready var btn_rotate_right: Button = %BtnRotateRight
 @onready var lbl_power_free: Label = %LblPowerFree
 
 # Botões de Ação na Barra Inferior
@@ -37,6 +38,7 @@ var sfx = null
 @onready var btn_chaff: Button = %BtnChaff
 @onready var btn_repair: Button = %BtnRepair
 @onready var btn_comms: Button = %BtnComms
+@onready var btn_warp: Button = %BtnWarp
 @onready var btn_terminal: Button = %BtnTerminal
 
 # Modal do Terminal de Hacking / Depuração
@@ -79,6 +81,7 @@ var tick_count: int = 1
 func _ready() -> void:
 	sfx = SoundEffectsScript.new()
 	add_child(sfx)
+	sfx.set_engine_power(ship.systems.get("MOTORES", 1) if ship else 1)
 	
 	if crt_overlay and crt_overlay.material:
 		crt_mat = crt_overlay.material.duplicate()
@@ -101,27 +104,83 @@ func _ready() -> void:
 		_log("[color=#aaffaa] * %s (%s) \"%s\" -> Pró: %s[/color]" % [c.name, c.role_title, c.callsign, c.pro_title])
 	_log("[color=#ffff66]\n! EMERGÊNCIA: Cargueiro Baependi torpedeado pela Falange Fascista.[/color]")
 	_log("[color=#ffaaaa]Ordens: Aproxime-se, baixe os escudos para teletransportar os 380 civis.[/color]")
-	_log("[color=#55ffff]DICA: Use [ESPAÇO] para Pausa Tática a qualquer momento.[/color]\n")
+	_log("[color=#55ffff]CONTROLES: [T] Teleporte | [F] Lasers | [C] Chaff | [R] Reparo | [Q/E] Girar | [WASD] Bússola[/color]\n")
 	
 	_update_all_displays()
 
 func _input(event: InputEvent) -> void:
 	if hack_modal and hack_modal.visible:
-		if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+		if event is InputEventKey and event.pressed and (event.keycode == KEY_ESCAPE or event.keycode == KEY_TAB):
 			_close_hack_terminal()
 		return
 		
-	if event.is_action_pressed("ui_accept") or (event is InputEventKey and event.pressed and event.keycode == KEY_SPACE):
-		_toggle_pause()
-	elif event is InputEventKey and event.pressed and not is_game_over:
-		if event.keycode == KEY_QUOTELEFT or event.keycode == KEY_F1:
-			_open_hack_terminal()
-		elif event.keycode == KEY_1:
-			_set_speed(0.5)
-		elif event.keycode == KEY_2:
-			_set_speed(1.0)
-		elif event.keycode == KEY_3:
-			_set_speed(1.5)
+	# Gamepad / Controle Joypad (Mobile & Desktop)
+	if event is InputEventJoypadButton and event.pressed and not is_game_over:
+		match event.button_index:
+			JOY_BUTTON_START:
+				_toggle_pause()
+			JOY_BUTTON_BACK:
+				_toggle_hack_terminal()
+			JOY_BUTTON_A:
+				_on_action_transport_toggle()
+			JOY_BUTTON_X:
+				_on_action_fire_or_intercept()
+			JOY_BUTTON_B:
+				_on_action_chaff()
+			JOY_BUTTON_Y:
+				_on_action_repair()
+			JOY_BUTTON_LEFT_SHOULDER:
+				_on_action_rotate_left()
+			JOY_BUTTON_RIGHT_SHOULDER:
+				_on_action_rotate_right()
+			JOY_BUTTON_DPAD_UP:
+				_on_compass_direct(0)
+			JOY_BUTTON_DPAD_RIGHT:
+				_on_compass_direct(90)
+			JOY_BUTTON_DPAD_DOWN:
+				_on_compass_direct(180)
+			JOY_BUTTON_DPAD_LEFT:
+				_on_compass_direct(270)
+		return
+
+	# Teclado (PC & Linux)
+	if event is InputEventKey and event.pressed:
+		if event.keycode == KEY_SPACE:
+			_toggle_pause()
+		elif not is_game_over:
+			match event.keycode:
+				KEY_QUOTELEFT, KEY_F1, KEY_TAB:
+					_open_hack_terminal()
+				KEY_1:
+					_set_speed(0.5)
+				KEY_2:
+					_set_speed(1.0)
+				KEY_3:
+					_set_speed(1.5)
+				KEY_T:
+					_on_action_transport_toggle()
+				KEY_F:
+					_on_action_fire_or_intercept()
+				KEY_C:
+					_on_action_chaff()
+				KEY_R:
+					_on_action_repair()
+				KEY_M, KEY_X:
+					_on_action_comms()
+				KEY_V:
+					_on_action_warp()
+				KEY_Q:
+					_on_action_rotate_left()
+				KEY_E:
+					_on_action_rotate_right()
+				KEY_W, KEY_UP:
+					_on_compass_direct(0)
+				KEY_D, KEY_RIGHT:
+					_on_compass_direct(90)
+				KEY_S, KEY_DOWN:
+					_on_compass_direct(180)
+				KEY_A, KEY_LEFT:
+					_on_compass_direct(270)
 
 func _process(delta: float) -> void:
 	_update_crt_fx(delta)
@@ -356,12 +415,14 @@ func _connect_events() -> void:
 	
 	btn_pause.pressed.connect(_toggle_pause)
 	btn_speed.pressed.connect(_on_speed_toggle)
-	btn_rotate.pressed.connect(_on_action_rotate)
+	btn_rotate_left.pressed.connect(_on_action_rotate_left)
+	btn_rotate_right.pressed.connect(_on_action_rotate_right)
 	btn_transport.pressed.connect(_on_action_transport_toggle)
 	btn_fire.pressed.connect(_on_action_fire_or_intercept)
 	btn_chaff.pressed.connect(_on_action_chaff)
 	btn_repair.pressed.connect(_on_action_repair)
 	btn_comms.pressed.connect(_on_action_comms)
+	btn_warp.pressed.connect(_on_action_warp)
 	btn_terminal.pressed.connect(_open_hack_terminal)
 	
 	btn_close_hack.pressed.connect(_close_hack_terminal)
@@ -383,6 +444,8 @@ func _on_power_adjust(sys_name: String, delta: int) -> void:
 	_update_power_grid_display()
 
 func _on_ship_power_changed(_sys_name: String, _val: int, _available: int) -> void:
+	if sfx and ship:
+		sfx.set_engine_power(ship.systems.get("MOTORES", 1))
 	_update_power_grid_display()
 	_update_radar_display()
 
@@ -411,12 +474,16 @@ func _update_header_status() -> void:
 	else:
 		lbl_collapse_timer.modulate = Color(0.3, 1.0, 0.45)
 		
+	var buf = ship.transporter_buffer
+	var max_b = ship.max_buffer
+	var blocks = int(round((float(buf) / float(max_b)) * 5.0))
+	var bar_str = "■".repeat(blocks) + "□".repeat(5 - blocks)
 	var cas_str = " | BAIXAS: %d" % ship.civilians_casualties if ship.civilians_casualties > 0 else ""
-	lbl_rescued.text = "CIVIS: %d/380 [PLATAFORMA: %d/50]%s" % [ship.civilians_rescued, ship.transporter_buffer, cas_str]
+	lbl_rescued.text = "CIVIS: %d/380 | TRIAGEM: [%s] %d/%d%s" % [ship.civilians_rescued, bar_str, buf, max_b, cas_str]
 	lbl_hull.text = "CASCO: %3d%%" % ship.hull
 	
 	if ship.transporter_active:
-		lbl_shield.text = "ESCUDOS: [BAIXADOS]"
+		lbl_shield.text = "ESCUDOS: [DESLIGADOS // TRANSPORTE]"
 		lbl_shield.modulate = Color(1.0, 0.3, 0.3)
 	else:
 		lbl_shield.text = "ESCUDO MÉD: %3d%%" % ship.get_average_shield()
@@ -473,6 +540,22 @@ func _update_power_grid_display() -> void:
 		data["lbl_info"].text = "EFIC: %d%%" % int(efficiency * 100.0)
 		data["btn_plus"].disabled = not ship.can_increase_power(sys_name)
 		data["btn_minus"].disabled = not ship.can_decrease_power(sys_name)
+		
+	var laser_pwr = ship.systems.get("LASERS", 0)
+	if laser_pwr == 0:
+		btn_fire.text = "[ LASERS (0 MW!) ]"
+		btn_fire.modulate = Color(0.85, 0.45, 0.45)
+	else:
+		btn_fire.text = "[ LASERS (F) ]"
+		btn_fire.modulate = Color(1.0, 1.0, 1.0)
+		
+	var engine_pwr = ship.systems.get("MOTORES", 0)
+	if engine_pwr < 2:
+		btn_warp.modulate = Color(0.55, 0.55, 0.55)
+		btn_warp.text = "[ EVASÃO (<2 MW) ]"
+	else:
+		btn_warp.modulate = Color(0.4, 1.0, 0.6)
+		btn_warp.text = "[ EVASÃO / DOBRA (V) ]"
 
 func _update_radar_display() -> void:
 	var sensor_eff = ship.get_system_efficiency("SENSORES")
@@ -481,10 +564,37 @@ func _update_radar_display() -> void:
 
 # --- AÇÕES DO JOGADOR ---
 
-func _on_action_rotate() -> void:
+func _on_action_rotate_left() -> void:
 	if is_game_over: return
 	sfx.play_click()
-	ship.rotate_ship_90()
+	ship.rotate_ship(-90)
+
+func _on_action_rotate_right() -> void:
+	if is_game_over: return
+	sfx.play_click()
+	ship.rotate_ship(90)
+
+func _on_compass_direct(heading_deg: int) -> void:
+	if is_game_over: return
+	sfx.play_click()
+	ship.set_ship_heading(heading_deg)
+
+func _on_action_warp() -> void:
+	if is_game_over: return
+	var pwr_engines = ship.systems.get("MOTORES", 0)
+	if pwr_engines < 2:
+		_log("[color=#ff5555]> Motores sem carga de dobra! Aloque pelo menos 2 MW em MOTORES.[/color]")
+		sfx.play_error()
+		return
+		
+	sfx.play_warp_jump()
+	trigger_damage_fx(0.6, false)
+	crt_static_amount = 0.5
+	
+	if ship.civilians_rescued > 0:
+		_game_over("RETIRADA TÁTICA: SALTO DE DOBRA EFETUADO COM %d CIVIS RESGATADOS!" % ship.civilians_rescued)
+	else:
+		_game_over("RETIRADA TÁTICA DA DMZ: SALTO DE DOBRA REALIZADO SEM CIVIS A BORDO.")
 
 func _on_action_transport_toggle() -> void:
 	if is_game_over: return
@@ -496,9 +606,10 @@ func _on_action_transport_toggle() -> void:
 		_log("[color=#ffaaaa]A nave está vulnerável a impactos de torpedo enquanto a plataforma estiver energizada![/color]")
 	else:
 		sfx.play_click()
-		btn_transport.text = "[ TELETRANSPORTE (OFF) ]"
+		btn_transport.text = "[ TELETRANSPORTE (T) ]"
 		_log("[color=#33ff66]> Teletransporte suspenso. Geradores de escudo rearmados.[/color]")
 	_update_header_status()
+	_update_shield_diagram()
 	_update_shield_diagram()
 
 func _on_action_fire_or_intercept() -> void:
@@ -564,7 +675,7 @@ func _on_action_chaff() -> void:
 	crt_static_amount = clamp(crt_static_amount + 0.4, 0.0, 1.0)
 	crt_glitch_amount = clamp(crt_glitch_amount + 0.15, 0.0, 1.0)
 	radar.deploy_chaff_countermeasure()
-	btn_chaff.text = "[ ISCAS/CHAFF (%d) ]" % ship.chaff_count
+	btn_chaff.text = "[ ISCAS/CHAFF (C: %d) ]" % ship.chaff_count
 	_log("[color=#33ff66]> Cartucho Chaff ejetado! O torpedo mais próximo perdeu o travamento![/color]")
 	_update_radar_display()
 
@@ -600,6 +711,12 @@ func _on_action_comms() -> void:
 	if comms_intercept_count == 1:
 		_log("[color=#55ffff]>> INTELIGÊNCIA: Frequência não autorizada interceptada (1910.0 MHz). O terminal de depuração de Alcântara pode estar acessível no botão [ CONSOLE AUX ]![/color]")
 		btn_terminal.modulate = Color(1.0, 1.0, 0.3)
+
+func _toggle_hack_terminal() -> void:
+	if hack_modal and hack_modal.visible:
+		_close_hack_terminal()
+	else:
+		_open_hack_terminal()
 
 func _open_hack_terminal() -> void:
 	sfx.play_click()

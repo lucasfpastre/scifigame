@@ -41,6 +41,8 @@ func _render_debriefing() -> void:
 		text += "   - [color=#ffff44]Bônus de Mérito Humanitário: +%d pts[/color]\n" % d.get("ethical_bonus", 0)
 	if d.get("is_hacked", false):
 		text += "   - [color=#55ffff]★ ANOMALIA DE CÓDIGO: Sobrescrita do Mainframe (Protocolo 1910) (+1500 pts)[/color]\n"
+	if d.get("warp_bonus", 0) > 0:
+		text += "   - [color=#55ffff]★ MANOBRA DE DOBRA: Evasão Tática com Sobreviventes (+%d pts)[/color]\n" % d.get("warp_bonus", 0)
 		
 	text += "\n[color=#ffffff]2. ENFRENTAMENTO TÁTICO & COMBATE:[/color]\n"
 	text += "   - Torpedos Hostis Interceptados: %d (+%d pts)\n" % [d.get("torpedoes_intercepted", 0), d.get("torpedoes_intercepted", 0) * 30]

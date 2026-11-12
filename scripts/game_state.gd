@@ -133,6 +133,11 @@ static func record_run_result(civilians_saved: int, casualties: int, ticks_survi
 		ethical_bonus = 250
 		total_score += ethical_bonus
 		
+	var warp_bonus = 0
+	if reason.begins_with("RETIRADA TÁTICA"):
+		warp_bonus = 350
+		total_score += warp_bonus
+		
 	var pha_earned = int(total_score * 0.1) # Converte pontos em moeda PHA (10% do score)
 	
 	# Patente Militar Concedida
@@ -144,6 +149,12 @@ static func record_run_result(civilians_saved: int, casualties: int, ticks_survi
 		pha_earned += 300
 		rank_title = "ESTRATEGISTA LENDÁRIO // PROTOCOLO ALMIRANTE 1910"
 		evaluation = "VIOLAÇÃO DO PROTOCOLO DE ALCÂNTARA: O cadete reprogramou o mainframe da simulação e salvou a tripulação sem aceitar o cenário sem vitória. Um ato de insubordinação genial digno da história da Frota."
+	elif reason.begins_with("RETIRADA TÁTICA") and civilians_saved > 0:
+		if total_score >= 1200:
+			rank_title = "Capitão de Corveta // Sobrevivência Tática"
+		else:
+			rank_title = "Primeiro-Tenente // Retirada Prudente"
+		evaluation = "DECISÃO DE RETIRADA TÁTICA: O comandante priorizou a preservação de %d vidas salvas e de sua guarnição diante do aniquilamento certo. Uma escolha amarga, porém honrosa e lúcida." % civilians_saved
 	elif total_score >= 3200:
 		rank_title = "Comandante Honorário // Medalha Almirante Negro"
 		evaluation = "Desempenho lendário. O resgate quase total do Baependi entrará para a história militar da Coalizão."
@@ -178,6 +189,7 @@ static func record_run_result(civilians_saved: int, casualties: int, ticks_survi
 		"pts_ticks": pts_ticks,
 		"pts_combat": pts_torpedoes + pts_cruisers,
 		"ethical_bonus": ethical_bonus,
+		"warp_bonus": warp_bonus,
 		"total_score": total_score,
 		"pha_earned": pha_earned,
 		"rank_title": rank_title,

@@ -6,6 +6,13 @@ var generator: AudioStreamGenerator
 var playback: AudioStreamGeneratorPlayback
 var sample_rate: float = 22050.0
 
+var hum_player: AudioStreamPlayer
+var hum_generator: AudioStreamGenerator
+var hum_playback: AudioStreamGeneratorPlayback
+var hum_phase: float = 0.0
+var hum_freq: float = 58.0
+var hum_volume: float = 0.035
+
 func _ready() -> void:
 	player = AudioStreamPlayer.new()
 	generator = AudioStreamGenerator.new()
@@ -15,6 +22,41 @@ func _ready() -> void:
 	add_child(player)
 	player.play()
 	playback = player.get_stream_playback() as AudioStreamGeneratorPlayback
+	
+	hum_player = AudioStreamPlayer.new()
+	hum_generator = AudioStreamGenerator.new()
+	hum_generator.mix_rate = sample_rate
+	hum_generator.buffer_length = 0.15
+	hum_player.stream = hum_generator
+	add_child(hum_player)
+	hum_player.play()
+	hum_playback = hum_player.get_stream_playback() as AudioStreamGeneratorPlayback
+
+func _process(_delta: float) -> void:
+	if not hum_playback: return
+	var frames_avail = hum_playback.get_frames_available()
+	if frames_avail <= 0: return
+	var inc = (TAU * hum_freq) / sample_rate
+	for i in range(frames_avail):
+		var sample = (sin(hum_phase) * 0.75 + sin(hum_phase * 2.0) * 0.25) * hum_volume
+		hum_playback.push_frame(Vector2(sample, sample))
+		hum_phase = fmod(hum_phase + inc, TAU)
+
+func set_engine_power(power_mw: int) -> void:
+	hum_freq = lerp(52.0, 78.0, clamp(float(power_mw) / 5.0, 0.0, 1.0))
+	hum_volume = lerp(0.025, 0.065, clamp(float(power_mw) / 5.0, 0.0, 1.0))
+
+func play_warp_jump() -> void:
+	if not playback: return
+	var frames = int(sample_rate * 0.6)
+	var phase = 0.0
+	for i in range(frames):
+		var t = float(i) / float(frames)
+		var freq = lerp(60.0, 1400.0, t * t)
+		var noise = (randf() * 2.0 - 1.0) * 0.15 * t
+		var sample = (sin(phase) * 0.35 + noise) * (1.0 - t * 0.3)
+		playback.push_frame(Vector2(sample, sample))
+		phase = fmod(phase + (TAU * freq) / sample_rate, TAU)
 
 func play_beep(freq: float = 880.0, duration: float = 0.05, volume: float = 0.2) -> void:
 	if not playback:
