@@ -22,6 +22,7 @@ var sfx = null
 @onready var txt_ship_info: RichTextLabel = %TxtShipInfo
 
 @onready var btn_launch: Button = %BtnLaunch
+@onready var btn_back: Button = %BtnBack
 
 # Painéis dos Oficiais
 @onready var txt_pilot: RichTextLabel = %TxtPilot
@@ -75,6 +76,11 @@ func _setup_buttons() -> void:
 	btn_ship_unlock.pressed.connect(_on_unlock_ship)
 	btn_scores.pressed.connect(_on_scores_pressed)
 	btn_launch.pressed.connect(_on_launch_pressed)
+	btn_back.pressed.connect(func():
+		sfx.play_click()
+		Input.vibrate_handheld(20)
+		get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+	)
 
 func _on_cycle_ship() -> void:
 	sfx.play_click()

@@ -14,6 +14,12 @@ static var total_runs: int = 0
 static var unlocked_ships: Array = ["SHIP_CANDIDO"]
 static var high_scores: Array = []
 
+# Configurações do Terminal (Settings)
+static var sfx_volume: float = 1.0
+static var crt_curvature: bool = true
+static var crt_scanlines: bool = true
+static var haptics_enabled: bool = true
+
 static var last_debriefing: Dictionary = {}
 
 static func _static_init() -> void:
@@ -83,6 +89,10 @@ static func load_save() -> void:
 		unlocked_ships = data.get("unlocked_ships", ["SHIP_CANDIDO"])
 		selected_ship_id = data.get("selected_ship_id", "SHIP_CANDIDO")
 		high_scores = data.get("high_scores", [])
+		sfx_volume = float(data.get("sfx_volume", 1.0))
+		crt_curvature = bool(data.get("crt_curvature", true))
+		crt_scanlines = bool(data.get("crt_scanlines", true))
+		haptics_enabled = bool(data.get("haptics_enabled", true))
 
 static func save_game() -> void:
 	var data = {
@@ -92,7 +102,11 @@ static func save_game() -> void:
 		"total_runs": total_runs,
 		"unlocked_ships": unlocked_ships,
 		"selected_ship_id": selected_ship_id,
-		"high_scores": high_scores
+		"high_scores": high_scores,
+		"sfx_volume": sfx_volume,
+		"crt_curvature": crt_curvature,
+		"crt_scanlines": crt_scanlines,
+		"haptics_enabled": haptics_enabled
 	}
 	var file = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file:
